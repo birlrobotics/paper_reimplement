@@ -25,11 +25,19 @@ class Agent():
         demo_act_list = self.demo_act
         return demo_act_list
 
+# record an episode experience when robot executing the demonstration
+# Arg:
+#       episode_list: a list of namedtuple experience
     def exp_record(self,episode_list):
         for exp_tuple in episode_list:
             self.experience.append(exp_tuple)
 
+# return a list of namedtuple for experience.
+    def get_exp_list(self):
+        exp_list = self.experience.get_experience_tuple()
+        return exp_list
 
+# ================================================================================================
 class Exp_Buffer():
 
     def __init__(self):
@@ -40,7 +48,7 @@ class Exp_Buffer():
 
     def add(self, state, contact, action, reward, next_state, next_contact, done):
         """Add a new experience to memory."""
-        e = self.experience(state, contact, action, reward, next_state, next_contact, done))
+        e = self.experience(state, contact, action, reward, next_state, next_contact, done)
         self.memory.append(e)
 
 #  Not done yet
@@ -57,3 +65,7 @@ class Exp_Buffer():
         dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(device)
 
         return (states, actions, rewards, next_states, dones)
+# return a list of namedtuple for experience.
+    def get_experience_list(self):
+        experience_list = self.memory
+        return experience_list

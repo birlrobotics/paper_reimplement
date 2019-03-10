@@ -10,5 +10,5 @@
     "python.unitTest.nosetestsEnabled": false,
     "python.unitTest.unittestEnabled": false,
     "python.unitTest.promptToConfigure": false,
-    "python.pythonPath": "/home/jim/anaconda3/envs/py2/bin/python"
+    "python.pythonPath": "/Users/jim/anaconda2/envs/py2/bin/python"
 }

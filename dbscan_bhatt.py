@@ -94,7 +94,7 @@ def DBSCAN(m, eps, minpts):
     >>> clustering = clustering = DBSCAN(X3, 3, 2)
     >>> clustering.labels_
     array([ 0,  0,  0,  1,  1, None])
-	"""
+    """
     cluster_id = 1
     n_points = m.shape[0]
     classifications = [UNCLASSIFIED] * n_points

@@ -59,18 +59,19 @@ class Region_Cluster(experience_list,action_list):
         return same_component_exp_set
 
 
-#  Arguments:
-#       input_set: the set waited for cluster
-#       input_exp_tuple_set: The distance type that DBSACNE uses to cluster.
-#                       If it is 'states_dist', return a set of clusters , each cluster is a set of bunch of experience tuples.
-#                       If it is 'regions_dist',  return a set of clusters , each cluster is a set of bunch of regions, and
-#                         each region is a set of bunch of experience tuples.
-#       component: cluter on which component, 'states' or 'next_states'.
+# Args:
+# input_set: the set waited for cluster
+# distance_type: The distance type that DBSACNE uses to cluster.
+#                      If it is 'states_dist', return a set of clusters , each cluster is a set of bunch of experience tuples.
+#                      If it is 'regions_dist',  return a set of clusters , each cluster is a set of bunch of regions, and
+#                      each region is a set of bunch of experience tuples.
+# component: cluter on which component, 'states' or 'next_states'.
+
 #  Return:
 #       a set of clusters , each cluster is either a set of bunch of experience tuples,
 #       or a set of rigion.
 
-    def cluster(self, input_exp_tuple_set, distance_type, component):
+    def cluster(self, input_set, distance_type, component):
         TODO
 
  # DBSCAN algorithm

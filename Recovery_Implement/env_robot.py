@@ -31,6 +31,13 @@ class Env():
 
         return contact_mode
 
+# robot executes the demo action
+# arg:
+#       execute_demo_act_list: input a list of action for execution.
+# return:
+#       episode_record: An episode experience. Restored as a list of
+#       namedtuple [(s,z,a,r,s',z',),(s,z,a,r,s',z',),(s,z,a,r,s',z',),...]
+
     def execute_demo_act(self,execute_demo_act_list):
 
         episode_record= []
@@ -56,5 +63,4 @@ class Env():
             state = next_state
             contact = next_contact
 
-#       [(s,z,a,r,s',z',),(s,z,a,r,s',z',),(s,z,a,r,s',z',),...]
         return episode_record

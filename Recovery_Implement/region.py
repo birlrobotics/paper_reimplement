@@ -40,7 +40,7 @@ return_set : (set)
         for act_index in self.a_dict.keys():
             # line 3
 
-            rigon_phi_hat_set = set()
+            region_phi_hat_set = set()
 
             same_act_exp_set = self.extract_exp_with_same_action(act_index)
             region_psi_set = self.cluster(same_act_exp_set ,distance_type = 'states_dist',component='next_states')

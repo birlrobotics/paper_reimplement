@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 DBSCAN: Density-Based Spatial Clustering of Applications with Noise 
-        use Euclidean Distance D_s(s_i, s_j) or Bhattacharyya Distance.     
+        use Euclidean Distance D_s(s_i, s_j).     
 """
 
 # Author: Jim Huang <huangjiancong863@gmail.com>
@@ -18,7 +18,8 @@ NOISE = -1
 
 
 def DBSCAN(samples, eps, minpts, metric):
-    """Density-Based Spatial Clustering of Applications with Noise
+    """Density-Based Spatial Clustering of Applications with Noise algo 
+       Caculate to Bhattacharyya Distance
 
     Parameters
 	----------
@@ -32,8 +33,8 @@ def DBSCAN(samples, eps, minpts, metric):
 	samples : array_like
 		The original samples waiting the clustering.
     metric : str
-        E or B
-        Use "Euclidean Distance" or "Bhattacharyya Distance" to clustering.
+        'E' or 'B'
+        Use "Euclidean Distance" or "Bhattacharyya Distance".
 
 	Return
 	------
@@ -51,25 +52,16 @@ def DBSCAN(samples, eps, minpts, metric):
     array([ 0,  0,  0,  1,  1, -1])
 
     """
-    if metric == 'E':
-        cluster_id = 1
-        n_points = samples.shape[0]
-        classifications = [UNCLASSIFIED] * n_points
-        for point_id in range(0, n_points):
-            if classifications[point_id] == UNCLASSIFIED:
-                if expand_cluster(samples, classifications, point_id, cluster_id, eps, minpts):
-                    cluster_id = cluster_id + 1
-        return classifications
+    cluster_id = 1
+    n_points = samples.shape[0]
+    classifications = [UNCLASSIFIED] * n_points
+    for point_id in range(0, n_points):
+        # point = samples[:,point_id]
+        if classifications[point_id] == UNCLASSIFIED:
+            if expand_cluster(samples, classifications, point_id, cluster_id, eps, minpts, metric):
+                cluster_id = cluster_id + 1
+    return classifications
 
-    else:
-        mean = np.mean(samples, axis=0)
-        c = np.cov(samples.T)
-        eigen_vals, eigen_vect = np.linalg.eig(c)
-        cov_matrix = np.diag(eigen_vals)
-        distribution = 
-
-
-        
 def bhat_distance(a, b):
     """Caculate the Bhattacharyya Distance"""
     if not len(a) == len(b):
@@ -82,20 +74,23 @@ def eucli_distance(a, b):
         raise ValueError("a and b must be of the same size")
     return math.sqrt(np.power(a-b, 2).sum())
 
-def eps_neighborhood(a, b, eps):
-    return eucli_distance(a, b) < eps
+def eps_neighborhood(a, b, eps, metric):
+    if metric == 'E':
+        return eucli_distance(a, b) < eps
+    else:
+        return bhat_distance(a ,b) < eps
 
 
-def region_query(samples, point_id, eps):
+def region_query(samples, point_id, eps, metric):
     n_points = samples.shape[0]
     seeds = []
     for i in range(0, n_points):
-        if eps_neighborhood(samples[point_id,:], samples[i,:], eps):
+        if eps_neighborhood(samples[point_id,:], samples[i,:], eps, metric):
             seeds.append(i)
     return seeds
 
-def expand_cluster(samples, classifications, point_id, cluster_id, eps, minpts):
-    seeds = region_query(samples, point_id, eps)
+def expand_cluster(samples, classifications, point_id, cluster_id, eps, minpts, metric):
+    seeds = region_query(samples, point_id, eps, metric)
     if len(seeds) < minpts:
         classifications[point_id] = NOISE
         return False
@@ -106,7 +101,7 @@ def expand_cluster(samples, classifications, point_id, cluster_id, eps, minpts):
             
         while len(seeds) > 0:
             current_point = seeds[0]
-            results = region_query(samples, current_point, eps)
+            results = region_query(samples, current_point, eps, metric)
             if len(results) >= minpts:
                 for i in range(0, len(results)):
                     result_point = results[i]

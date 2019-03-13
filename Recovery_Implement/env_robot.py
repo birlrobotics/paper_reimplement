@@ -1,16 +1,31 @@
+from math import sqrt
+import numpy as np
 class Env():
 
-    def __init__():
-
-        self.m
-
+    def __init__(self,dim):
+        self.current_pos = [0]*dim
+        self.dim = dim
 #   Reset the environment to initial state.
 
-    def reset():
+    def reset(self):
+        self.current_pos = [0]*self.dim
 
-    def get_reward():
+    def get_reward(self, state, next_state):
+        r =0
+        print(state,next_state)
+        for i,j in zip(state,next_state):
+            r += abs(i**2 - j**2)
+        return -sqrt(r)
 
-        return r
+    def test_pertubation(self,  delta = 10):
+        per = np.random.normal(0, delta, 2*self.dim)
+        return per
+
+    def test_robot_move(self, goal,  mean = 0, std = 12):
+        self.current_pos = goal + np.random.normal(mean, std, self.dim)
+
+    def get_pos(self):
+        return self.current_pos
 
     def perturbation(self, delta_d):
         contact_mode = []
@@ -38,26 +53,27 @@ class Env():
 #       episode_record: An episode experience. Restored as a list of
 #       namedtuple [(s,z,a,r,s',z',),(s,z,a,r,s',z',),(s,z,a,r,s',z',),...]
 
-    def execute_demo_act(self,execute_demo_act_list):
+    def execute_demo_act(self,execute_demo_act_dict):
 
         episode_record= []
         cache_exp_tuple = ()
 
-        state = ROS_current_pos
-        contact = perturbation()
+        state = self.current_pos
+        contact = self.test_pertubation()
 
-        for i, act in enumerate(execute_demo_act_list):
+        for  act_index, act_goal in execute_demo_act_dict.items():
 
 #           Noise move means adding the Gaussian noise to the goal position of an action,
 #           to model the mechanical or control error.
+            action={}
+            action[act_index] = act_goal
+            self.test_robot_move(act_goal)
 
-            ROS_noise_move_to(act)
+            next_state = self.current_pos
+            next_contact = self.test_pertubation()
+            reward = self.get_reward(state, next_state)
 
-            next_state = ROS_current_pos
-            next_contact = perturbation()
-            reward = get_reward()
-
-            exp_tuple = cache_exp_tuple = (state, contact, reward, act, next_state, next_contact)
+            exp_tuple = cache_exp_tuple = (state, contact, action, reward , next_state, next_contact)
             episode_record.append(exp_tuple)
 
             state = next_state

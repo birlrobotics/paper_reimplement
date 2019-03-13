@@ -5,8 +5,9 @@ robot = Env()
 # How many times does the robot execute the human demonstration
 repeat_times = 100
 
+goal_tuples = ROS_demonstration
 #  record demo and return a demonstration action list
-agent.demo_record()
+agent.demo_record(goal_tuples)
 demo_act_dict = agent.get_demo_act_list()
 
 for i in repeat_times:

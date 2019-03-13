@@ -14,33 +14,32 @@ class Region_Cluster():
         self.a_dict = {}
         self.region_phi_result_set = set()
 
-# Refer to Algorithm 1: Learning State Distribution Components
-# phi_set is the lower case phi, region_phi_set is the capital case phi(which always has the prefix region_).
-# Psi_set is also this case
-"""Cluter a bunch of input points(states).
-
-Parameters
-----------
-experience_list:(list)
-    a list of experience namedtuples.
-
-action_dict:(action_dict)
-    a dict of demonstration actions.
-Return
-------
-return_set : (set)
-	a set of regions, the result of clusterring and merging.
-    (psi_set, psi_set, ...)
-    psi_set = set((s,z,a,r,s',z'),...)
-"""
+        # Refer to Algorithm 1: Learning State Distribution Components
+        # phi_set is the lower case phi, region_phi_set is the capital case phi(which always has the prefix region_).
+        # Psi_set is also this case
     def learn_state_region(self,experience_list,action_dict):
+        """Cluter a bunch of input points(states).
+        Parameters
+        ----------
+        experience_list:(list)
+            a list of experience namedtuples.
+
+        action_dict:(action_dict)
+            a dict of demonstration actions.
+        Return
+        ------
+        return_set : (set)
+            a set of regions, the result of clusterring and merging.
+            (psi_set, psi_set, ...)
+            psi_set = set((s,z,a,r,s',z'),...)
+        """
         self.e_list = experience_list
         self.a_dict = action_dict
         # line 2
         for act_index in self.a_dict.keys():
             # line 3
 
-            rigon_phi_hat_set = set()
+            rigion_phi_hat_set = set()
 
             same_act_exp_set = self.extract_exp_with_same_action(act_index)
             region_psi_set = self.cluster(same_act_exp_set ,distance_type = 'states_dist',component='next_states')

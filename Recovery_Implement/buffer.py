@@ -19,7 +19,6 @@ class Exp_Buffer():
 
         self.experience = namedtuple("Experience", \
                                  field_names = ["state", "contact", "action", "reward", "next_state", "next_contact", "done"])
-#         self.cluster = Region_Cluster()
         self.region_psi_result_set = set()
     def add(self, state, contact, action, reward, next_state, next_contact, done):
         """Add a new experience to memory."""
@@ -51,23 +50,3 @@ class Exp_Buffer():
     def get_experience_list(self):
         experience_list = self.memory
         return experience_list
-
-
-
-    def cluster_region(self, action_dict):
-        """Clustering a bunch of points into regions.
-
-        Parameters
-        ----------
-        action_list : (list)
-            a list of demonstration action
-
-        Return
-        ------
-        region_psi_resultset: (set)
-            a set of regions, the result of clusterring and merging.
-            (psi_set, psi_set, ...)
-            psi_set = set((s,z,a,r,s',z'),...)
-        """
-        region_psi_resultset = self.cluster.learn_state_region(self, self.memory, action_dict)
-        return region_psi_resultset

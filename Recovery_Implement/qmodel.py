@@ -4,10 +4,12 @@ import gaussian_tool as gt
 class Value_Function(nn.Module):
     """Actor (Policy) Model."""
 
-    def __init__(self):
-         return
+    def __init__(self,random_seed = 0):
+        
     def init_region_number(self,region_number, act_dict):
-        self.region_q_array = np.ndarray.random.shape(region_number)
+
+        self.region_q_array = torch.randn((region_number))
+        self.region_q_array.requires_grad = True
         self.demo_act_dict = act_dict
     """Q approximation function
 
@@ -38,8 +40,8 @@ class Value_Function(nn.Module):
                         phi_state_pro = gt.gaussian_prob(region_infs_list[3],region_infs_list[4],state, contact)
                         numerator += self.region_q_array[i] * phi_state_pro
                         denominator += phi_state_pro
-                        value = numerator/denominator
+                value = numerator/denominator
                     else:
                         value = -inf
-        s_a_q_arrary.append(value)
+            s_a_q_arrary.append(value)
         return s_a_q_arrary

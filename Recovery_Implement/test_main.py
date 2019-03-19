@@ -5,7 +5,7 @@ import numpy as np
 robot = env_robot.Env(dim=2)
 agent = Recovery_RL_Agent.Agent()
 
-goal_array = np.array(([100,300],[100,500],[300,500],[300,300],[300,200],[300,100]))
+goal_array = np.array(([100,100],[100,300],[300,300]))
 demo_act_dict = agent.demo_record(goal_array)
 
 repeat_times = 100

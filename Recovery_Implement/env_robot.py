@@ -8,7 +8,7 @@ class Env():
         self.dim = dim
         self.test_perturbation_count = 0
         self.final_goal_state = 0
-        self.test_final_goal_state = np.array((300,100))
+        self.test_final_goal_state = np.array((300,300))
         self.have_final_goal = False
 #   Reset the environment to initial state.
 
@@ -68,7 +68,8 @@ class Env():
         """
         distance = 0
         for i,j in zip(p1,p2):
-            distance += sqrt(abs(i**2 - j**2))
+            distance += abs(i - j)**2
+        distance = sqrt(distance)
         return distance
 
     def get_reward(self, state, next_state, duration, task_type = 'maze'):
@@ -137,13 +138,14 @@ class Env():
               and whether the next state is within the goal region G.  
         """
         a= self.test_perturbation_count
-        per = np.array((a,a,a,a))
-        self.test_perturbation_count += 1
-        if self.test_perturbation_count == 6:
-            self.test_perturbation_count = 0
-        return per
+        pert = np.random.normal(0.25 * (a+1), 0.07, self.dim *2)
 
-    def test_duration_func(self,distance,ee_speed = 50):
+        self.test_perturbation_count += 1
+        if self.test_perturbation_count == 3:
+            self.test_perturbation_count = 0
+        return pert
+
+    def test_duration_func(self,distance,ee_speed = 5):
         """Return the duration of a specific execution of an action.
         Param:
             distance: the execution moving distance
@@ -166,6 +168,18 @@ class Env():
         Return:
         duration: the action execution duration time (second).
         """
+        # # Make two noise region on goal (100,300)
+        # multi_region = np.array((100,300))
+        # if (goal == multi_region).all():
+        #     if np.random.randn((1)) >= 1 :
+        #         mean = 10
+        #     elif np.random.randn((1)) <= -1:
+        #         mean = -10
+        #     elif 0>= np.random.randn((1)) > -1:
+        #         mean = 5
+        #     else :
+        #         mean = -5
+
         noise_goal = goal + np.random.normal(mean, std, self.dim)
         distance = self.state_distance(noise_goal, self.current_pos)
         duration = self.test_duration_func(distance)

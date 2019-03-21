@@ -27,16 +27,18 @@ class Region_Cluster():
     Return
     ------
     return_set : list
-	    a set off each region which having mean and covariance matrix correspond.
-    
+	    A set of each region which having mean and covariance matrix correspond.
+
     Examples
     --------
     >>>
 
     Notes
     -----
-    phi_set is the lower case phi, region_phi_set is the capital case phi(which always has the prefix region_).
-    psi_set is the lower case psi, region_psi_set is the capital case psi(which always has the prefix region_).
+    phi_set is the lower case phi, region_phi_set is the capital case phi\
+        (which always has the prefix region_).
+    psi_set is the lower case psi, region_psi_set is the capital case psi\
+        (which always has the prefix region_).
 
     References
     ----------
@@ -50,7 +52,8 @@ class Region_Cluster():
 
     def learn_state_region(self,):
         """
-        Algo 1 in the recovery paper and add total DBSCAN with bhatt distance in the end
+        Algo 1 in the recovery paper and add total DBSCAN with bhatt distance \
+         in the end
         """
         # line 2
         return_set_set = []
@@ -58,30 +61,38 @@ class Region_Cluster():
             # line 3
             region_phi_hat_set = []
             same_act_exp_set = self.extract_exp_with_same_action(act_index)
-            region_psi_set = self.cluster(same_act_exp_set, component='next', distance_type = 'states_dist')
+            region_psi_set = self.cluster(same_act_exp_set, component='next', \
+                distance_type = 'states_dist')
             # convert set to list for iteration
             list_region_psi_set = list(region_psi_set)
-            # psi_set is a set of experience namedtuples within one output region psi,
+            # psi_set is a set of experience_list within one output region psi,
             for psi_set in list_region_psi_set:
-                region_phi_hat_hat_set = self.cluster(psi_set, component='current', distance_type = 'states_dist')
+                region_phi_hat_hat_set = self.cluster(psi_set, \
+                    component='current', distance_type = 'states_dist')
                 # Union set operation
                 region_phi_hat_set.extend(region_phi_hat_hat_set)
             # Line 11-12
             # P is a set of capital regions
-            P = self.cluster(region_phi_hat_set, component= 'current', distance_type = 'region_dist')
+            P = self.cluster(region_phi_hat_set, component= 'current', \
+                distance_type = 'region_dist')
             if P != []:
                 return_set_set.extend(P)
-        #Inthe end, use Bhatt distance to cluster with total region after clustered by every same action set
+        #Inthe end, use Bhatt distance to cluster with total region after \
+        # clustered by every same action set
         cluster = clustering.DBSCAN(return_set_set, 0.05, minpts=1, metric='B')
         classifications_b = cluster.dbscan()
-        return_set = self.clustered_batch(classifications_b, return_set_set, metric='extend')
+        return_set = self.clustered_batch(classifications_b, return_set_set, \
+            metric='extend')
         return return_set
 
     def extract_exp_with_same_action(self, act_index):
-        """Get a set of experience namedtuple with same action: [(s,z,a,r,s',z'),...]"""
+        """Get a set of experience namedtuple with same action:\
+         [(s,z,a,r,s',z'),...]
+        """
         same_component_exp_set = []
         for e in self.e_list:
-            # each exp tuple just have one action, so donnot need to iterate, just take the first one
+            # each exp tuple just have one action, so donnot need to iterate, \
+            # just take the first one
             action_list = list(e.action.keys())
             if action_list[0] == act_index:
                 same_component_exp_set.append(e)
@@ -94,17 +105,18 @@ class Region_Cluster():
         input_set : array_like
             The original samples waiting the clustering.
         eps : float
-		    The maximum distance between two samples for them to be considered as in
-		    the same neighborhood. In the paper, the eps = 2cm.
+		    The maximum distance between two samples for them to be considered \
+            as in the same neighborhood. In the paper, the eps = 2cm.
 	    minpts : int
-		    The number of samples (or total weight) in a neighborhood for a point to
-		    be considered as a core point. This includes the point itself.
+		    The number of samples (or total weight) in a neighborhood for a \
+            point to be considered as a core point.
+            This includes the point itself.
         distance_type : str
             The distance type that DBSACNE uses to cluster.
-            If it is 'states_dist', return a set of clusters, \
-            each cluster is a set of bunch of experience tuples.
-            If it is 'regions_dist', return a set of clusters, \
-            each cluster is a set of bunch of regions.
+            If it is 'states_dist', return a set of clusters, each cluster is \
+            a set of bunch of experience tuples.
+            If it is 'regions_dist', return a set of clusters, each cluster is \
+            a set of bunch of regions.
             And each region is a set of bunch of experience tuples.
         component : str
             Cluter on which component, 'states' or 'next_states'.
@@ -112,22 +124,24 @@ class Region_Cluster():
         Return
         ------
         cb : list
-            A set of clusters , each cluster is either a set of bunch of experience tuples,
-            or a set of region. where each subset is a set containing all states or region
-            belonging to that cluster
+            A set of clusters , each cluster is either a set of bunch of \
+            experience tuples, or a set of region. where each subset is a set \
+            containing all states or region belonging to that cluster
         """
-        
+
         if component == 'current':
             if distance_type == 'states_dist':
                 # use DBSCAN with Euclidean Distance to create the states bunch
                 train_set_cs = self.extract(input_set, component)
-                cluster = clustering.DBSCAN(train_set_cs, eps=5, minpts=3, metric='E')
+                cluster = clustering.DBSCAN(train_set_cs, eps=5, minpts=3, \
+                    metric='E')
                 classifications_cs = cluster.dbscan()
-                cb = self.clustered_batch(classifications_cs, train_set_cs, metric='append')
+                cb = self.clustered_batch(classifications_cs, train_set_cs, \
+                    metric='append')
                 return cb
             else:
-                # use DBSCAN with Bhattacharyya Distance to create the distribution bunch
-                d = self.distribution(input_set) # return the distribution set from input_set
+                # use DBSCAN with Bhat Distance to create the distribution bunch
+                d = self.distribution(input_set) # return the distribution set
                 cluster = clustering.DBSCAN(d, 0.05, minpts=1, metric='B')
                 classifications_b = cluster.dbscan()
                 cb = self.clustered_batch(classifications_b, d, metric='extend')
@@ -135,9 +149,11 @@ class Region_Cluster():
 
         else:
             train_set_ns = self.extract(input_set, component)
-            cluster = clustering.DBSCAN(train_set_ns, eps=5, minpts=3, metric='E')
+            cluster = clustering.DBSCAN(train_set_ns, eps=5, minpts=3, \
+                metric='E')
             classifications_ns = cluster.dbscan()
-            cb = self.clustered_batch(classifications_ns, input_set, metric='append')
+            cb = self.clustered_batch(classifications_ns, input_set, \
+                metric='append')
             return cb
 
     def clustered_batch(self, classifications, samples, metric):
@@ -174,9 +190,10 @@ class Region_Cluster():
         # search the index with same value
         SET = list(set(classifications))
         if -1 in SET:
-            SET.remove(-1) # remove the noise point 
+            SET.remove(-1) # remove the noise point
         for i in SET:
-            address_index = [x for x in range(len(classifications)) if classifications[x] == i]
+            address_index = [x for x in range(len(classifications)) if \
+                classifications[x] == i]
             for j in address_index:
                 if metric == 'append':
                     A.append(samples[j])
@@ -188,10 +205,10 @@ class Region_Cluster():
 
     def distribution(self, batch):
         """
-        Cluster the probability distribution use Bhattacharyya Distances D_psi or D_phi,\
+        Cluster the probability distribution use Bhattacharyya Distances。
         In the paper, the max distance eps_psi or eps_phi is 0.05cm
-        Step 1. Use Maximum Likelihood to find the best mean and covariance matrix
-        Step 2. Use multivariate normal distribution to compute the corresponding distribution
+        Step 1. Use Maximum Likelihood to find the mean and covariance matrix
+        Step 2. Use multivariate normal distribution to compute the distribution
         Parameters
         ----------
         batch : array_like
@@ -201,7 +218,7 @@ class Region_Cluster():
         ------
         distribution : array_like
             mean and covariance matrix
-        
+
         """
         cb_b = []
         for i in range(len(batch)):

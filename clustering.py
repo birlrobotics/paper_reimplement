@@ -35,11 +35,11 @@ class DBSCAN():
         samples : list
             The original samples waiting the clustering.
         eps : float
-            The maximum distance between two samples for them to be considered as in
-            the same neighborhood. In the paper, the eps = 2cm.
+            The maximum distance between two samples for them to be considered \
+            as in the same neighborhood. In the paper, the eps = 2cm.
         minpts : int
-            The number of samples (or total weight) in a neighborhood for a point to
-            be considered as
+            The number of samples (or total weight) in a neighborhood for a \
+            point to be considered as
             a core point. This includes the point itself.
         metric : str
             'E' or 'B'
@@ -96,24 +96,30 @@ class DBSCAN():
 
     def eps_neighborhood(self, point_a, point_b):
         if self.metric == 'E':
-            # Caculate the Euclidean Distance with state and contact mode at the same time
+            # Caculate the Euclidean Distance with state and contact mode at \
+            #   the same time
             # Like: D_s(s_i; s_j) = ||s_i − s_j||_2 * ||z^m_i − z^m_j||_2
-            return self.eucli_distance(point_a[0], point_b[0]) + self.eucli_distance(point_a[1], point_b[1])  < self.eps
+            return self.eucli_distance(point_a[0], point_b[0]) + \
+            self.eucli_distance(point_a[1], point_b[1])  < self.eps
         else:
             # Caculate the bhatt distance between two distribution
             return self.bhat_distance(point_a, point_b) < self.eps
 
-    def bhat_distance(self, observation_a, observation_b):
-        """Caculate the Bhattacharyya Distance of every oberservations in point"""
-        if not len(observation_a) == len(observation_b):
+    def bhat_distance(self, obs_a, obs_b):
+        """Caculate the Bhattacharyya Distance of every oberservations in point
+        """
+        if not len(obs_a) == len(obs_b):
             raise ValueError("a and b must be of the same size")
-        DIFF = np.array(observation_a[0])-np.array(observation_b[0])
-        SUM = (np.array(observation_a[1])+np.array(observation_b[1]))*0.5
-        DET = np.linalg.det(SUM)/np.sqrt(np.linalg.det(np.array(observation_a[1]))*np.linalg.det(np.array(observation_b[1])))
-        return 0.125*np.dot(np.dot(DIFF, np.linalg.inv(SUM)), DIFF.T) + 0.5*np.log10(DET)
+        DIFF = np.array(obs_a[0])-np.array(obs_b[0])
+        SUM = (np.array(obs_a[1])+np.array(obs_b[1]))*0.5
+        DET = np.linalg.det(SUM)/np.sqrt(np.linalg.det(np.array(obs_a[1]))* \
+        np.linalg.det(np.array(obs_b[1])))
 
-    def eucli_distance(self, oberservation_a, oberservation_b):
+        return 0.125*np.dot(np.dot(DIFF, np.linalg.inv(SUM)), DIFF.T) + \
+         0.5*np.log10(DET)
+
+    def eucli_distance(self, obs_a, obs_b):
         """Caculate the Euclidean Distance of every oberservations in point"""
-        if not len(oberservation_a) == len(oberservation_b) and len():
+        if not len(obs_a) == len(obs_b) and len():
             raise ValueError("a and b must be of the same size")
-        return np.linalg.norm(np.array(oberservation_a) - np.array(oberservation_b))
+        return np.linalg.norm(np.array(obs_a) - np.array(obs_b))

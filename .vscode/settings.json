@@ -10,7 +10,7 @@
     "python.unitTest.nosetestsEnabled": false,
     "python.unitTest.unittestEnabled": false,
     "python.unitTest.promptToConfigure": false,
-    "python.pythonPath": "/home/bourne/anaconda3/envs/rec/bin/python",
+    "python.pythonPath": "/Users/jim/anaconda2/envs/py2/bin/python",
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true
 }

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 DBSCAN: Density-Based Spatial Clustering of Applications with Noise 
-        use Euclidean Distance D_s(s_i, s_j) or Bhattacharyya Distance.     
+        use Euclidean Distance D_s(s_i, s_j).     
 """
 
 # Author: Jim Huang <huangjiancong863@gmail.com>
@@ -17,8 +17,9 @@ UNCLASSIFIED = False
 NOISE = -1
 
 
-def DBSCAN(samples, eps, minpts, metric):
-    """Density-Based Spatial Clustering of Applications with Noise
+def DBSCAN(samples, eps, minpts):
+    """Density-Based Spatial Clustering of Applications with Noise algo 
+       Caculate to Bhattacharyya Distance
 
     Parameters
 	----------
@@ -31,9 +32,6 @@ def DBSCAN(samples, eps, minpts, metric):
 		a core point. This includes the point itself.
 	samples : array_like
 		The original samples waiting the clustering.
-    metric : str
-        E or B
-        Use "Euclidean Distance" or "Bhattacharyya Distance" to clustering.
 
 	Return
 	------
@@ -51,30 +49,21 @@ def DBSCAN(samples, eps, minpts, metric):
     array([ 0,  0,  0,  1,  1, -1])
 
     """
-    if metric == 'E':
-        cluster_id = 1
-        n_points = samples.shape[0]
-        classifications = [UNCLASSIFIED] * n_points
-        for point_id in range(0, n_points):
-            if classifications[point_id] == UNCLASSIFIED:
-                if expand_cluster(samples, classifications, point_id, cluster_id, eps, minpts):
-                    cluster_id = cluster_id + 1
-        return classifications
+    cluster_id = 1
+    n_points = samples.shape[0]
+    classifications = [UNCLASSIFIED] * n_points
+    for point_id in range(0, n_points):
+        # point = samples[:,point_id]
+        if classifications[point_id] == UNCLASSIFIED:
+            if expand_cluster(samples, classifications, point_id, cluster_id, eps, minpts):
+                cluster_id = cluster_id + 1
+    return classifications
 
-    else:
-        mean = np.mean(samples, axis=0)
-        c = np.cov(samples.T)
-        eigen_vals, eigen_vect = np.linalg.eig(c)
-        cov_matrix = np.diag(eigen_vals)
-        distribution = 
-
-
-        
 def bhat_distance(a, b):
     """Caculate the Bhattacharyya Distance"""
     if not len(a) == len(b):
         raise ValueError("a and b must be of the same size")
-    return -math.log(sum((math.sqrt(u * w) for u, w in zip(a, b))))
+    return math.log(sum((math.sqrt(u * w) for u, w in zip(a, b))))
 
 def eucli_distance(a, b):
     """Caculate the Euclidean Distance"""
@@ -116,4 +105,4 @@ def expand_cluster(samples, classifications, point_id, cluster_id, eps, minpts):
                             seeds.append(result_point)
                         classifications[result_point] = cluster_id
             seeds = seeds[1:]
-    return True
+        return True

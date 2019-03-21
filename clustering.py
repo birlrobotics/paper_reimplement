@@ -107,6 +107,9 @@ class DBSCAN():
 
     def bhat_distance(self, obs_a, obs_b):
         """Caculate the Bhattacharyya Distance of every oberservations in point
+        Reference
+        ---------
+        https://en.wikipedia.org/wiki/Bhattacharyya_distance
         """
         if not len(obs_a) == len(obs_b):
             raise ValueError("a and b must be of the same size")

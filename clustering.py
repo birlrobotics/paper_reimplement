@@ -9,7 +9,7 @@ import numpy as np
 import random
 
 UNCLASSIFIED = False
-NOISE = -1
+NOISE = -1 # the nosiy point is -1 in classification_set
 
 class DBSCAN():
     """
@@ -18,8 +18,6 @@ class DBSCAN():
             We can switch the distance with Euclidean Distance or
             Bhattacharyya Distance by metric
     """
-
-
 
     def __init__(self, samples, eps, minpts, metric):
         self.samples = samples

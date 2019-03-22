@@ -94,8 +94,8 @@ class Env():
             if self.state_distance(self.test_final_goal_state, next_state) > 20:
                 r += duration
             else:
-                return -r
-        return -r
+                return -r, True
+        return -r, False
 
     def perturbation(self, delta_d):
         """Executing the reversible perturbation with parameter delta.
@@ -231,7 +231,7 @@ class Env():
         Note: The episode experience.is a list of namedtuple [(state,contact,action,reward,next_state, next_contact),...]
         """
         episode_record= []
-        cache_exp_tuple = ()
+        # cache_exp_tuple = ()
 
         state = self.current_pos
         contact = self.test_pertubation()
@@ -248,9 +248,9 @@ class Env():
 
             next_state = self.current_pos
             next_contact = self.test_pertubation()
-            reward = self.get_reward(state, next_state, exe_duration)
+            reward, is_goal = self.get_reward(state, next_state, exe_duration)
 
-            exp_tuple = cache_exp_tuple = (state, contact, action, reward , next_state, next_contact)
+            exp_tuple = (state, contact, action, reward , next_state, next_contact,is_goal)
             episode_record.append(exp_tuple)
 
             state = next_state

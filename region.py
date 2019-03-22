@@ -77,10 +77,19 @@ class Region_Cluster():
                 distance_type = 'region_dist')
             if P != []:
                 return_set_set.extend(P)
-        #Inthe end, use Bhatt distance to cluster with total region after \
+        #At the end, use Bhatt distance to cluster with total region after \
         # clustered by every same action set
-        cluster = clustering.DBSCAN(return_set_set, 0.05, minpts=1, metric='B')
+        cluster = clustering.DBSCAN(return_set_set, 0.05, minpts=2, metric='B')
         classifications_b = cluster.dbscan()
+        # The six lines below are to save the single distribution region
+        # Becasue there have no noise region in this region_set
+        if classifications_b != []:
+            a = max(classifications_b)
+            address_class = [x for x in range(len(classifications_b)) if\
+                classifications_b[x] == -1]
+            for k in address_class:
+                classifications_b[k]=1+a
+                a += 1
         return_set = self.clustered_batch(classifications_b, return_set_set, \
             metric='extend')
         return return_set
@@ -142,8 +151,17 @@ class Region_Cluster():
             else:
                 # use DBSCAN with Bhat Distance to create the distribution bunch
                 d = self.distribution(input_set) # return the distribution set
-                cluster = clustering.DBSCAN(d, 0.05, minpts=1, metric='B')
+                cluster = clustering.DBSCAN(d, 0.05, minpts=2, metric='B')
                 classifications_b = cluster.dbscan()
+                # The six lines below are to save the single distribution region
+                # Becasue there have no noise region in this region_set
+                if classifications_b != []:
+                    a = max(classifications_b)
+                    address_class = [x for x in range(len(classifications_b)) if\
+                        classifications_b[x] == -1]
+                    for k in address_class:
+                        classifications_b[k]=1+a
+                        a += 1
                 cb = self.clustered_batch(classifications_b, d, metric='extend')
                 return cb
 

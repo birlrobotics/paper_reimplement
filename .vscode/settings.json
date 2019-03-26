@@ -12,5 +12,7 @@
     "python.unitTest.promptToConfigure": false,
     "python.pythonPath": "/Users/jim/anaconda2/envs/py2/bin/python",
     "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "editor.fontFamily": "Menlo, Monaco, 'Courier New', monospace, Meslo LG M for Powerline",
+
 }

@@ -21,6 +21,14 @@ import numpy as np
 from buffer import Exp_Buffer
 from region import Region_Cluster
 from collections import OrderedDict
+from qmodel import Value_Function
+
+import torch
+import torch.nn.functional as F
+import torch.optim as optim
+
+LR = 5e-4               # learning rate 
+
 class Agent():
 
     def __init__(self, seed = 0):
@@ -30,7 +38,7 @@ class Agent():
         """
         self.demo_act_dict = OrderedDict()
         self.num_of_demo_goal = OrderedDict()
-#         self.state_value_func = Value_Function()
+        self.state_value_func = Value_Function()
         self.exps_list = Exp_Buffer()
         self.cluster = Region_Cluster()
 
@@ -88,8 +96,8 @@ class Agent():
             a list of experience tuple.
         """
         for exp_tuple in episode_list:
-            state, contact, action, reward, next_state, next_contact = exp_tuple
-            self.exps_list.add(state, contact, action, reward, next_state, next_contact, False)
+            state, contact, action, reward, next_state, next_contact, is_goal = exp_tuple
+            self.exps_list.add(state, contact, action, reward, next_state, next_contact, is_goal)
 
     # return a list of namedtuple for experience.
     def get_exp_list(self):
@@ -169,38 +177,29 @@ class Agent():
         """Construct region directed graph used for algorithm 2.
         """
         pass
-    def init_value_function(self):
+
+    def test_init_value_function(self,phi_inf_list):
         """Initialization of the approximate value function with the number of region.
         """
-        pass
-        self.state_value_func.init_region_number(self.num_of_region, self.demo_act_dict)
+        self.state_value_func.init_region_number(3, self.demo_act_dict, phi_inf_list)
 
-    def learn_initial_policy(self):
+    def test_learn_initial_policy(self):
         """Learn the policy with the experience tuple.
         """
-        pass
-        # get a tuple of ndarrays: (ndarray, ndarray, ...)
-        experiences_batch = self.exps_list.sample()
-        states, contacts, actions, rewards, next_states, next_contacts, dones = experiences
-        # Get max predicted Q values (for next states) from target model
-        # max(1)[0] take the maximum value along a given axis=1 (row).
-        # Because it do not need to compute the gradient of target, use detach.
-        Q_targets_next = self.state_value_func_target(next_states).detach().max(1)[0].unsqueeze(1)
-        # Compute Q targets for current states
-        Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
+        
+        for e in self.exps_list.get_experience_list():
+            state, contact, action, reward, next_state, next_contact, done = e
+            Q_target_next = self.state_value_func.test_forward(next_state)
+            Q_target = reward + Q_target_next *(1 - done)
 
-        # Get expected Q values from local model, along row to get the index with actions
-        Q_expected = self.state_value_func_local(states).gather(1, actions)
-
-        # Compute loss
-        loss = F.mse_loss(Q_expected, Q_targets)
-        # Minimize the loss
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-
-        # ------------------- update target network ------------------- #
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)
+#           Get the action index
+            a = int(action.keys()[0])
+            Q_expected = self.state_value_func.test_forward(state)[a]
+                        
+            loss = F.mse_loss(Q_expected, Q_target)
+            
+            self.state_value_func.optim()
+            self.state_value_func.zero_grad()
 
         #  not done
     def soft_update(self, local_model, target_model, tau):

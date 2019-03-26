@@ -79,6 +79,7 @@ class Region_Cluster():
                 return_set_set.extend(P)
         #At the end, use Bhatt distance to cluster with total region after \
         # clustered by every same action set
+        ## TODO:check bhatt distance
         cluster = clustering.DBSCAN(return_set_set, 0.05, minpts=2, metric='B')
         classifications_b = cluster.dbscan()
         # The six lines below are to save the single distribution region
@@ -116,6 +117,7 @@ class Region_Cluster():
         eps : float
 		    The maximum distance between two samples for them to be considered \
             as in the same neighborhood. In the paper, the eps = 2cm.
+            Like a threshold.
 	    minpts : int
 		    The number of samples (or total weight) in a neighborhood for a \
             point to be considered as a core point.
@@ -128,7 +130,7 @@ class Region_Cluster():
             a set of bunch of regions.
             And each region is a set of bunch of experience tuples.
         component : str
-            Cluter on which component, 'states' or 'next_states'.
+            Cluster on which component, 'states' or 'next_states'.
 
         Return
         ------
@@ -141,7 +143,7 @@ class Region_Cluster():
         if component == 'current':
             if distance_type == 'states_dist':
                 # use DBSCAN with Euclidean Distance to create the states bunch
-                train_set_cs = self.extract(input_set, component)
+                train_set_cs = self.extract_sz(input_set, component)
                 cluster = clustering.DBSCAN(train_set_cs, eps=5, minpts=3, \
                     metric='E')
                 classifications_cs = cluster.dbscan()
@@ -150,8 +152,8 @@ class Region_Cluster():
                 return cb
             else:
                 # use DBSCAN with Bhat Distance to create the distribution bunch
-                d = self.distribution(input_set) # return the distribution set
-                cluster = clustering.DBSCAN(d, 0.05, minpts=2, metric='B')
+                d = self.moment(input_set) # return the distribution set
+                cluster = clustering.DBSCAN(d, 0.05, minpts=2, metric='B')## TODO: verify with 1-D 2_D
                 classifications_b = cluster.dbscan()
                 # The six lines below are to save the single distribution region
                 # Becasue there have no noise region in this region_set
@@ -166,9 +168,10 @@ class Region_Cluster():
                 return cb
 
         else:
-            train_set_ns = self.extract(input_set, component)
+            train_set_ns = self.extract_sz(input_set, component)
             cluster = clustering.DBSCAN(train_set_ns, eps=5, minpts=3, \
-                metric='E')
+                # TODO:eps threshold
+                metric='E')# ros use standard unit(kg, metres, radians)
             classifications_ns = cluster.dbscan()
             cb = self.clustered_batch(classifications_ns, input_set, \
                 metric='append')
@@ -221,9 +224,9 @@ class Region_Cluster():
             A = []
         return cb
 
-    def distribution(self, batch):
+    def moment(self, batch):
         """
-        Cluster the probability distribution use Bhattacharyya Distances。
+        Cluster the moment(distribution) use Bhattacharyya Distances。
         In the paper, the max distance eps_psi or eps_phi is 0.05cm
         Step 1. Use Maximum Likelihood to find the mean and covariance matrix
         Step 2. Use multivariate normal distribution to compute the distribution
@@ -234,8 +237,8 @@ class Region_Cluster():
 
         Return
         ------
-        distribution : array_like
-            mean and covariance matrix
+        cb : array_like
+            Having mean and covariance matrix
 
         """
         cb_b = []
@@ -253,7 +256,7 @@ class Region_Cluster():
         cb = cb_b
         return cb
 
-    def extract(self, input_set, component):
+    def extract_sz(self, input_set, component):
         """extract the state and contact mode with same action"""
         train_set = []
         for e in input_set:

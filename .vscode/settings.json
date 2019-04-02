@@ -13,6 +13,7 @@
     "python.pythonPath": "/Users/jim/anaconda2/envs/py2/bin/python",
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
-    "editor.fontFamily": "Menlo, Monaco, 'Courier New', monospace, Meslo LG M for Powerline",
-
+    "editor.fontFamily": "Menlo, Monaco, 'Courier New', monospace",
+    "terminal.integrated.shell.linux": "bash",
+    "terminal.integrated.shell.osx": "bash"
 }

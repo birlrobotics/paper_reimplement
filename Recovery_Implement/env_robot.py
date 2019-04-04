@@ -1,5 +1,6 @@
 from math import sqrt
 import numpy as np
+
 class Env():
 
     def __init__(self,dim):
@@ -8,11 +9,11 @@ class Env():
         self.dim = dim
         self.test_perturbation_count = 0
         self.final_goal_state = 0
-        self.test_final_goal_state = np.array((300,300))
+        # self.test_final_goal_state = np.array((300,300))
         self.have_final_goal = False
 #   Reset the environment to initial state.
 
-    def demonstration(self,is_final_goal):
+    def demonstration(self,demo_states_list):
         """Record the demonstration state ponit into a goal list.
         Param:
             is_final_goal: the position of ponit 1
@@ -20,15 +21,13 @@ class Env():
         Return:
             self.goals_list(list): the list of the goals of demonstration actions.
         """
-        if self.have_final_goal == False:
-            demon_state = ROS_current_pos()
-            self.goals_list.append(demon_state)
-            if is_final_goal:
-                    self.final_goal_state = demon_state
-                    self.have_final_goal = True
-        else:
-            print("already have final goal, please reset the whold goals list, or append a new final goal")
-
+        self.goals_list = demo_states_list
+        self.final_goal_state = demo_states_list[-1]
+        print("The demonstration is:")
+        for i,goal in enumerate(self.goals_list):
+            print("point {}: {}".format(i,goal))
+        print("\n")
+        print("The final goal position is:{}".format(self.final_goal_state))
         return self.goals_list
 
     def get_goals_list(self):
@@ -72,26 +71,27 @@ class Env():
         distance = sqrt(distance)
         return distance
 
-    def get_reward(self, state, next_state, duration, task_type = 'maze'):
-        """Get the reward.
+    def get_reward(self, position, next_position, duration, task_type = 'maze'):
+        """Get the reward and dones.
         Param:
-            state(2D or 3D array): the position of state
-            next_state(2D or 3D array): the position of next state
+            position(2D or 3D array): the position of state
+            next_position(2D or 3D array): the position of next state
             duration(float): the action execution duration
             task_type(string): the type of the task
         ===========================
         Return:
             reward(float)
+            done(Boolen): indication of whether the next state is terminal state.
         ===========================
         Note: The reward estimation includes the duration of the relative action execution, 
-              and whether the next state is within the goal region G.  
+              and whether the next state position is within the goal region G.  
         """
-        distance = self.state_distance(state,next_state)
+        distance = self.state_distance(position,next_position)
         r= distance
         
-        # if the next state is in goal region G, which is set in a circle with radius 20.
+        # if the next state position is in goal region G, which is set in a circle with radius 20.
         if task_type == 'maze':
-            if self.state_distance(self.test_final_goal_state, next_state) > 20:
+            if self.state_distance(self.final_goal_state, next_position) > 20:
                 r += duration
             else:
                 return -r, True
@@ -126,7 +126,7 @@ class Env():
 
         return contact_mode
 
-    def test_pertubation(self,  delta = 10):
+    def test_pertubation(self, add_pert = False, delta = 10):
         """Executing the reversible perturbation with parameter delta.(for test)
         Param:
             delta(float): the parameter of perturbation
@@ -137,12 +137,16 @@ class Env():
         Note: The reward estimation includes the duration of the relative action execution, 
               and whether the next state is within the goal region G.  
         """
-        a= self.test_perturbation_count
-        pert = np.random.normal(0.25 * (a+1), 0.07, self.dim *2)
+        if add_pert:
+            a= self.test_perturbation_count
+            pert = np.random.normal(0.25 * (a+1), 0.07, self.dim *2)
 
-        self.test_perturbation_count += 1
-        if self.test_perturbation_count == 3:
-            self.test_perturbation_count = 0
+            self.test_perturbation_count += 1
+            if self.test_perturbation_count == 3:
+                self.test_perturbation_count = 0
+
+        else: pert = np.zeros( self.dim *2)
+        
         return pert
 
     def test_duration_func(self,distance,ee_speed = 5):
@@ -180,7 +184,10 @@ class Env():
         #     else :
         #         mean = -5
 
-        noise_goal = goal + np.random.normal(mean, std, self.dim)
+
+        # noise_goal = goal + np.random.normal(mean, std, self.dim)
+
+        noise_goal = goal
         distance = self.state_distance(noise_goal, self.current_pos)
         duration = self.test_duration_func(distance)
         self.current_pos = noise_goal
@@ -220,6 +227,57 @@ class Env():
 #       episode_record: An episode experience. Restored as a list of
 #       namedtuple [(s,z,a,r,s',z',),(s,z,a,r,s',z',),(s,z,a,r,s',z',),...]
 
+    def execute_seperate_demo_act(self,execute_demo_act_dict):
+        """Robot executes the demo action
+        Param:
+            execute_demo_act_list(list): input a list of action for execution.
+        ===============================
+        Return:
+            episode_record(list): An episode experience. 
+        ================================
+        Note: The episode experience.is a list of namedtuple [(state,action,reward,next_state),...]
+                And the state includes the position and contact mode.
+        """
+        episode_record= []
+        seperate_s_c_episode_record = []
+        # cache_exp_tuple = ()
+
+        position = self.current_pos
+        contact = self.test_pertubation()
+        state = np.append(position,contact)
+
+        # state = self.current_pos
+
+        for  act_index, act_goal in execute_demo_act_dict.items():
+
+#           Noise move means adding the Gaussian noise to the goal position of an action,
+#           to model the mechanical or control error.
+            # init an action dict with relative value
+            action={}
+            action[act_index] = act_goal
+            # executing the action and return the duration (duration should be get from ROS)
+            exe_duration = self.test_robot_move(act_goal)
+
+            next_position = self.current_pos
+            next_contact = self.test_pertubation(add_pert=True)
+            next_state = np.append(next_position,next_contact)
+            # next_state =self.current_pos
+
+            reward, done = self.get_reward(position, next_position, exe_duration)
+            # reward, done = self.get_reward(state, next_state, exe_duration)
+
+            exp_tuple = (state, action, reward, next_state, done)
+            seperate_s_c_tuple = (position,contact, action, reward, next_position,next_contact, done)
+
+            episode_record.append(exp_tuple)
+            seperate_s_c_episode_record.append(seperate_s_c_tuple)
+
+            position = next_position
+            contact = next_contact
+            state = next_state
+
+        return episode_record, seperate_s_c_episode_record
+
     def execute_demo_act(self,execute_demo_act_dict):
         """Robot executes the demo action
         Param:
@@ -228,13 +286,12 @@ class Env():
         Return:
             episode_record(list): An episode experience. 
         ================================
-        Note: The episode experience.is a list of namedtuple [(state,contact,action,reward,next_state, next_contact),...]
+        Note: The episode experience.is a list of namedtuple [(state,action,reward,next_state),...]
+                And the state includes the position and contact mode.
         """
         episode_record= []
-        # cache_exp_tuple = ()
 
         state = self.current_pos
-        contact = self.test_pertubation()
 
         for  act_index, act_goal in execute_demo_act_dict.items():
 
@@ -247,13 +304,12 @@ class Env():
             exe_duration = self.test_robot_move(act_goal)
 
             next_state = self.current_pos
-            next_contact = self.test_pertubation()
-            reward, is_goal = self.get_reward(state, next_state, exe_duration)
 
-            exp_tuple = (state, contact, action, reward , next_state, next_contact,is_goal)
+            reward, done = self.get_reward(state, next_state, exe_duration)
+
+            exp_tuple = (state, action, reward, next_state, done)
             episode_record.append(exp_tuple)
 
             state = next_state
-            contact = next_contact
 
         return episode_record

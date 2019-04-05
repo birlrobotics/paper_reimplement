@@ -33,7 +33,7 @@ BATCH_SIZE = 3
 # device = torch.device("cpu")
 class Agent():
 
-    def __init__(self, seed = 0):
+    def __init__(self, seed = 0, dim =2 ):
 
         """
         self.demo_act = {a_i: goal_postion}
@@ -43,6 +43,9 @@ class Agent():
         self.demo_goal = []
         self.state_value_func = Value_Function()
         self.memory = Exp_Buffer(batch_size= BATCH_SIZE)
+
+        # The dimension of the workspace (2 or 3).
+        self.dim = dim
 #         self.cluster = Region_Cluster()
 
         """
@@ -81,7 +84,7 @@ class Agent():
             self.demo_act_dict[action_index] = goal
             
 
-        print("Agent has recorded the demonstration as its original skills: {}".format(self.demo_act_dict))
+        print("Agent: agent has recorded the demonstration as its original skills: {} \n".format(self.demo_act_dict))
         return self.demo_act_dict
 
     def get_demo_act_dict(self):
@@ -204,9 +207,9 @@ class Agent():
 
 
     def test_get_phi_inf_list(self):
-        cov = [[5,0],[0,5]]
+        cov = np.eye(self.dim * 3)
         regions = []
-        origional_point = (0,0)
+        origional_point =  np.zeros(self.dim)
         regions.append(origional_point)
         for each_goal in self.demo_goal:
             regions.append(each_goal)
@@ -214,18 +217,25 @@ class Agent():
         self.region_amount = len(regions)
 
         regions_infs_list=[]
-        for mean, (key,value) in zip(regions,self.demo_act_dict.items()):
+        for region_position, (key,value) in zip(regions,self.demo_act_dict.items()):
             alist = []
             act_dict = {}
             act_dict[key] = value
             alist.append(key)
             alist.append(act_dict)
+
+            # Generate the mean covering the position and contact
+            contact_mean = self.test_get_contact_mean(region_position)
+            mean = np.append(region_position, contact_mean)
+
             alist.append(mean)
             alist.append(cov)
             regions_infs_list.append(alist)
-        print("test region infs:{}".format(regions_infs_list))
+        print("Agent: test region infs:{} \n".format(regions_infs_list))
         return regions_infs_list
             
+    def test_get_contact_mean(self, position):
+        return np.zeros(self.dim*2)
 
     def test_init_value_function(self,phi_inf_list):
         """Initialization of the approximate value function with the amount of regions.

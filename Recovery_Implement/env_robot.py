@@ -5,29 +5,36 @@ class Env():
 
     def __init__(self,dim):
         self.goals_list= []
-        self.current_pos = [0]*dim
+        #  Init the beginnig position of robot.
+        self.current_pos = np.zeros(dim)
         self.dim = dim
+        #  test_perturbation_count used for generate virtual contact mode.
         self.test_perturbation_count = 0
         self.final_goal_state = 0
         # self.test_final_goal_state = np.array((300,300))
         self.have_final_goal = False
+
+        self.original_skills_amount= 0
 #   Reset the environment to initial state.
 
     def demonstration(self,demo_states_list):
         """Record the demonstration state ponit into a goal list.
         Param:
-            is_final_goal: the position of ponit 1
+            demo_states_list: input a list of the demonstration position tuples.
         ===========================
         Return:
             self.goals_list(list): the list of the goals of demonstration actions.
         """
         self.goals_list = demo_states_list
         self.final_goal_state = demo_states_list[-1]
-        print("The demonstration is:")
+        self.original_skills_amount = len(demo_states_list)
+        print("Env: the original demonstration skills amount is:{} \n".format( self.original_skills_amount))
+
+        print("Env: The demonstration is:")
         for i,goal in enumerate(self.goals_list):
             print("point {}: {}".format(i,goal))
         print("\n")
-        print("The final goal position is:{}".format(self.final_goal_state))
+        print("Env: The final goal position is:{}".format(self.final_goal_state))
         return self.goals_list
 
     def get_goals_list(self):
@@ -139,10 +146,14 @@ class Env():
         """
         if add_pert:
             a= self.test_perturbation_count
-            pert = np.random.normal(0.25 * (a+1), 0.07, self.dim *2)
+            # The begining position is a constant.(Because the robot is always reset to a certain position)
+            if a == 0:
+                pert = np.zeros( self.dim *2)
+            else:
+                pert = np.random.normal(0.25 * a, 0.07, self.dim *2)
 
             self.test_perturbation_count += 1
-            if self.test_perturbation_count == 3:
+            if self.test_perturbation_count == (self.original_skills_amount+1):
                 self.test_perturbation_count = 0
 
         else: pert = np.zeros( self.dim *2)
@@ -163,7 +174,7 @@ class Env():
             # assume the end effector speed is
         return distance/ee_speed
 
-    def test_robot_move(self, goal,  mean = 0, std = 1):
+    def test_robot_move(self, goal,  mean = 0, std = 1, add_noise = True):
         """Move the robot end effector to specific postion, and return the time of duration.
 
         Param:
@@ -184,10 +195,11 @@ class Env():
         #     else :
         #         mean = -5
 
+        if add_noise:
+            noise_goal = goal + np.random.normal(mean, std, self.dim)
+        else:
+            noise_goal = goal
 
-        # noise_goal = goal + np.random.normal(mean, std, self.dim)
-
-        noise_goal = goal
         distance = self.state_distance(noise_goal, self.current_pos)
         duration = self.test_duration_func(distance)
         self.current_pos = noise_goal
@@ -235,7 +247,7 @@ class Env():
         Return:
             episode_record(list): An episode experience. 
         ================================
-        Note: The episode experience.is a list of namedtuple [(state,action,reward,next_state),...]
+        Note: The episode experience is a list of namedtuple [(state,action,reward,next_state),...]
                 And the state includes the position and contact mode.
         """
         episode_record= []
@@ -243,7 +255,7 @@ class Env():
         # cache_exp_tuple = ()
 
         position = self.current_pos
-        contact = self.test_pertubation()
+        contact = self.test_pertubation(add_pert=True)
         state = np.append(position,contact)
 
         # state = self.current_pos
@@ -278,38 +290,41 @@ class Env():
 
         return episode_record, seperate_s_c_episode_record
 
-    def execute_demo_act(self,execute_demo_act_dict):
-        """Robot executes the demo action
-        Param:
-            execute_demo_act_list(list): input a list of action for execution.
-        ===============================
-        Return:
-            episode_record(list): An episode experience. 
-        ================================
-        Note: The episode experience.is a list of namedtuple [(state,action,reward,next_state),...]
-                And the state includes the position and contact mode.
-        """
-        episode_record= []
 
-        state = self.current_pos
 
-        for  act_index, act_goal in execute_demo_act_dict.items():
 
-#           Noise move means adding the Gaussian noise to the goal position of an action,
-#           to model the mechanical or control error.
-            # init an action dict with relative value
-            action={}
-            action[act_index] = act_goal
-            # executing the action and return the duration (duration should be get from ROS)
-            exe_duration = self.test_robot_move(act_goal)
+#     def execute_demo_act(self,execute_demo_act_dict):
+#         """Robot executes the demo action
+#         Param:
+#             execute_demo_act_list(list): input a list of action for execution.
+#         ===============================
+#         Return:
+#             episode_record(list): An episode experience. 
+#         ================================
+#         Note: The episode experience.is a list of namedtuple [(state,action,reward,next_state),...]
+#                 And the state includes the position and contact mode.
+#         """
+#         episode_record= []
 
-            next_state = self.current_pos
+#         state = self.current_pos
 
-            reward, done = self.get_reward(state, next_state, exe_duration)
+#         for  act_index, act_goal in execute_demo_act_dict.items():
 
-            exp_tuple = (state, action, reward, next_state, done)
-            episode_record.append(exp_tuple)
+# #           Noise move means adding the Gaussian noise to the goal position of an action,
+# #           to model the mechanical or control error.
+#             # init an action dict with relative value
+#             action={}
+#             action[act_index] = act_goal
+#             # executing the action and return the duration (duration should be get from ROS)
+#             exe_duration = self.test_robot_move(act_goal)
 
-            state = next_state
+#             next_state = self.current_pos
 
-        return episode_record
+#             reward, done = self.get_reward(state, next_state, exe_duration)
+
+#             exp_tuple = (state, action, reward, next_state, done)
+#             episode_record.append(exp_tuple)
+
+#             state = next_state
+
+#         return episode_record

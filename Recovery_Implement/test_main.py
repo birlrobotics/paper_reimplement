@@ -14,18 +14,18 @@ from math import log
 
 
 robot = env_robot.Env(dim=2)
-agent = Recovery_RL_Agent.Agent()
+agent = Recovery_RL_Agent.Agent(dim=2)
 
-demo_goal =  [[100,50],[200,200],[300,400],[400,350],[450,450],[500,550],[500,650]]
+demo_goal =  [[100,50],[200,200],[300,400],[400,350],[450,450],[500,550]]
 robot.demonstration(demo_goal)
 demo_act_dict = agent.demo_record(demo_goal)
 
-repeat_times = 1
+repeat_times = 100
 
 for i in range(0,repeat_times):
     # executing the demo action and restore experience tuples in agent
-    # episode_record, seperate_s_c_record = robot.execute_demo_act(demo_act_dict)
-    episode_record = robot.execute_demo_act(demo_act_dict)
+    episode_record, seperate_s_c_record = robot.execute_seperate_demo_act(demo_act_dict)
+    # episode_record = robot.execute_demo_act(demo_act_dict)
     
     agent.exp_record(episode_record)
     # agent.seperate_exp_record(seperate_s_c_record)
@@ -36,11 +36,11 @@ phi_inf_list = agent.test_get_phi_inf_list()
 
 agent.test_init_value_function(phi_inf_list)
 
-# epoches = 10
-# max_t = 1000
-# for i_epoch in range(epoches):
-#     for t in range(max_t):
-#         loss = agent.test_learn_initial_policy()
-#         print('\rEpisode {}\tloss: {:.5f}'.format(i_epoch, loss),end = "")
+epoches = 10
+max_t = 500
+for i_epoch in range(epoches):
+    for t in range(max_t):
+        loss = agent.test_learn_initial_policy()
+        print('\rEpisode {}\tloss: {:.5f}'.format(i_epoch, loss),end = "")
 
-# print('\n',agent.get_region_q_value())
+print('\n',agent.get_region_q_value())

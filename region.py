@@ -56,8 +56,11 @@ class Region_Cluster():
          in the end
         """
         # line 2
-        return_set_set = []
-        for act_index in self.a_dict:
+        return_set = []
+        funnel_index = 0
+        region_index = 0
+
+        for (act_index, act_value) in self.a_dict.items():
             # line 3
             region_phi_hat_set = []
             same_act_exp_set = self.extract_exp_with_same_action(act_index)
@@ -75,24 +78,43 @@ class Region_Cluster():
             # P is a set of capital regions
             P = self.cluster(region_phi_hat_set, component= 'current', \
                 distance_type = 'region_dist')
-            if P != []:
-                return_set_set.extend(P)
-        #At the end, use Bhatt distance to cluster with total region after \
-        # clustered by every same action set
-        ## TODO:check bhatt distance
-        cluster = clustering.DBSCAN(return_set_set, 0.05, minpts=2, metric='B')
-        classifications_b = cluster.dbscan()
-        # The six lines below are to save the single distribution region
-        # Becasue there have no noise region in this region_set
-        if classifications_b != []:
-            a = max(classifications_b)
-            address_class = [x for x in range(len(classifications_b)) if\
-                classifications_b[x] == -1]
-            for k in address_class:
-                classifications_b[k]=1+a
-                a += 1
-        return_set = self.clustered_batch(classifications_b, return_set_set, \
-            metric='extend')
+            
+            for region_distribution in P:
+                if region_distribution != []:
+                    alist = []
+                    # funnel dictionary
+                    funnel_index += 1
+                    alist.append(funnel_index)
+
+                    # action dictionary
+                    action_dict = {}
+                    action_dict[act_index] = act_value
+                    alist.append(action_dict)
+
+                    # region dictionary
+                    region_dict = {}
+                    region_index += 1
+                    region_dict[region_index] = region_distribution
+                    alist.append(region_dict)
+
+                    return_set.append(alist)
+        # #At the end, use Bhatt distance to cluster with total region after \
+        # # clustered by every same action set
+        # cluster = clustering.DBSCAN(return_set_set_region, 0.05, minpts=2, metric='B')
+        # classifications_b = cluster.dbscan()
+        # # The six lines below are to save the single distribution region
+        # # Becasue there have no noise region in this region_set
+        # if classifications_b != []:
+        #     a = max(classifications_b)
+        #     address_class = [x for x in range(len(classifications_b)) if\
+        #         classifications_b[x] == -1]
+        #     for k in address_class:
+        #         classifications_b[k]=1+a
+        #         a += 1
+        # return_set = self.clustered_batch(classifications_b, return_set_set, \
+        #     metric='extend')
+
+
         return return_set
 
     def extract_exp_with_same_action(self, act_index):
@@ -153,7 +175,7 @@ class Region_Cluster():
             else:
                 # use DBSCAN with Bhat Distance to create the distribution bunch
                 d = self.moment(input_set) # return the distribution set
-                cluster = clustering.DBSCAN(d, 0.05, minpts=2, metric='B')## TODO: verify with 1-D 2_D
+                cluster = clustering.DBSCAN(d, 0.05, minpts=2, metric='B')
                 classifications_b = cluster.dbscan()
                 # The six lines below are to save the single distribution region
                 # Becasue there have no noise region in this region_set
@@ -243,13 +265,9 @@ class Region_Cluster():
         """
         cb_b = []
         for i in range(len(batch)):
-            samples = batch[i]
-            concatenate = []
-            for sample in samples:
-                concatenate.append(np.append(sample[0],sample[1]))
-            concatenate = np.array(concatenate)
-            me = np.mean(concatenate, axis=0) # the mean of every dimension
-            co = np.cov(concatenate.T) # the covariance matrix of samples
+            samples = np.reshape(batch[i], (40, 6))
+            me = np.mean(samples, axis=0) # the mean of every dimension
+            co = np.cov(samples.T) # covariance matrix
             # the distribution of point s in cluster
             if np.linalg.det(co) != 0:
                 cb_b.append([me, co])
@@ -261,7 +279,7 @@ class Region_Cluster():
         train_set = []
         for e in input_set:
             if component == 'current':
-                train_set.append([e.state, e.contact])
+                train_set.append([e.state])
             else:
-                train_set.append([e.next_state, e.next_contact])
+                train_set.append([e.next_state])
         return train_set

@@ -8,11 +8,11 @@ import region
 robot = env_robot.Env(dim=2)
 agent = Recovery_RL_Agent.Agent(dim=2)
 
-demo_goal =  [[10,5],[20,20],[30,40],[40,35],[45,45],[50,55]]
+demo_goal = [[4,5],[9,9],[10,0],[15,5],[8,15],[14.5,13]]
 robot.demonstration(demo_goal)
 demo_act_dict = agent.demo_record(demo_goal)
 
-repeat_times = 2
+repeat_times = 40
 
 for i in range(0,repeat_times):
     # executing the demo action and restore experience tuples in agent

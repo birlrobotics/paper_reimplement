@@ -19,8 +19,6 @@ class two_dim_test():
         self.q = torch.tensor((-1100.,-1100.,-1100.,-1100.,-1100.,-1100.,-1100.)).view(1,7)
         self.q.requires_grad = True
         self.exp = namedtuple("e",field_names = ["state", "action", "reward", "next_state", "done"])
-        # self.demo_act = [0,1,2]
-        # self.demo_goal = [100,200,300]
 
     def state_distance(self,p1,p2):
         distance = 0
@@ -154,5 +152,5 @@ class two_dim_test():
                 break
             self.act_dict[self.regions_infs_list[i][2]] = self.regions_infs_list[i+1][0]
             
-        # print(self.act_dict.items())
+        print(self.act_dict.items())
         # print(self.regions_infs_list)

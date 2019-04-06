@@ -4,25 +4,26 @@ from scipy.stats import multivariate_normal
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-LR = 0.1
+LR = 0.01
 
 
 class Value_Function():
     def __init__(self):
         return
-    def init_region_inf(self, region_amount, act_dict, phi_inf_list):
+    def init_funnels_inf(self, funnels_amount, act_dict, funnels_infs_list,init_Q_value):
 
         
-        # init q parameters. The input regions do not contain the original one, so add 1 in the amount.
-        # self.q = torch.ones(1,region_amount) * (-1200)
-        self.q = torch.randn(1,region_amount)
+        # init q parameters. The input funnels do not contain the beginning one, so add 1 in the amount.
+        # self.q = torch.ones(1,funnels_amount) * (-1200)
+
+        self.q = torch.randn(1,funnels_amount)
         self.q.requires_grad = True
         # act inf
         self.demo_act_dict = act_dict
         self.action_amount = len(act_dict)
 
-        self.regions_infs_list = phi_inf_list
-
+        self.funnels_infs_list = funnels_infs_list
+        self.init_Q_value = init_Q_value
 
 
     def qforward(self,states):
@@ -30,17 +31,18 @@ class Value_Function():
 
         Parameters
         ----------
-        state : (ndarray)
-        The position of agent. (2D or 3D)
-        contact : (ndarray)
-        The contact mode of agent. (2D or 3D)
-        regions_infs_list: (list)
-        A list of regions informations: [phi_1,phi_2,...],
-        phi_i = [phi_set, region_action, is_goal, mean, std, father, son]
-        region_action = {a_index: goal, ...}
+        state (ndarray): 
+            the conbination of position and contact.The position of agent (2D or 3D), and the contact mode of agent (2D or 3D).
+
+        funnels_infs_list (list):
+            A list of funnels informations (list): [f_1,f_2,...], and
+            f_i = [f_index, f_action, mean, std, is_goal, father, son]
+            f_action = {a_index: goal}
+
+
         Return
         ---------
-        s_a_q_arrary:(np.ndarray)
+        Q_batch_tensor(torch.tenser):
         1 dimension array recording each action value of a specific array.
         """
         # init a batch, size: 1 * batch_size * (action+1) dim
@@ -55,23 +57,29 @@ class Value_Function():
                 numerator = 0
                 denominator = 0
     #             compute the Q numerator
-                for i, region_infs_list in enumerate(self.regions_infs_list):
+                for i, funnel_inf_list in enumerate(self.funnels_infs_list):
                     cach = 0 
-                    if cmp(a_dict,region_infs_list[1]):
+                    if cmp(a_dict,funnel_inf_list[1]):
                         cach = 0
                     else:
-                        phi_state_pro = multivariate_normal.pdf(state, region_infs_list[2], region_infs_list[3])
+                        #  should be changed to (state, funnel_inf_list[2].values()[0],  funnel_inf_list[2].values()[1])
+                        #  The second and third terms are the mean and covariance.
+                        phi_state_pro = multivariate_normal.pdf(state, funnel_inf_list[2].values()[0][0], funnel_inf_list[2].values()[0][1])
                         phi_state_pro = torch.from_numpy(np.array(phi_state_pro)).float()
                         cach = self.q[0][i] * phi_state_pro
 
                     numerator = numerator + cach
     #             compute the Q denominator
-                for i, region_infs_list in enumerate(self.regions_infs_list):
+                for i, funnel_inf_list in enumerate(self.funnels_infs_list):
                     d_cach = 0
-                    if cmp(a_dict,region_infs_list[1]):
+                    if cmp(a_dict,funnel_inf_list[1]):
                         d_cach = 0
                     else:
-                        phi_state_pro = multivariate_normal.pdf(state, region_infs_list[2], region_infs_list[3])
+                        #  should be changed to (state, funnel_inf_list[2].values()[0],  funnel_inf_list[2].values()[1])
+                        #  The second and third terms are the mean and covariance.
+                        # phi_state_pro = multivariate_normal.pdf(state, funnel_inf_list[2], funnel_inf_list[3])
+                        phi_state_pro = multivariate_normal.pdf(state, funnel_inf_list[2].values()[0][0], funnel_inf_list[2].values()[0][1])
+                        
                         phi_state_pro = torch.from_numpy(np.array(phi_state_pro)).float()
                         d_cach = phi_state_pro
 
@@ -82,7 +90,7 @@ class Value_Function():
                 if denominator >= 1.0e-20:
                     Q_tensor[0][int(demo_a)] = numerator/denominator
                 else:
-                    Q_tensor[0][int(demo_a)] = -1200
+                    Q_tensor[0][int(demo_a)] = self.init_Q_value
             Q_batch_tensor[0][b_number] = Q_tensor
         Q_batch_tensor.requires_grad
         return Q_batch_tensor
@@ -105,5 +113,5 @@ class Value_Function():
         self.q.grad.data.zero_()
         return loss.data
 
-    def get_region_q(self):
+    def get_funnels_q(self):
         return self.q

@@ -239,7 +239,7 @@ class Env():
 #       episode_record: An episode experience. Restored as a list of
 #       namedtuple [(s,z,a,r,s',z',),(s,z,a,r,s',z',),(s,z,a,r,s',z',),...]
 
-    def execute_seperate_demo_act(self,execute_demo_act_dict):
+    def execute_separate_demo_act(self,execute_demo_act_dict):
         """Robot executes the demo action
         Param:
             execute_demo_act_list(list): input a list of action for execution.
@@ -251,7 +251,7 @@ class Env():
                 And the state includes the position and contact mode.
         """
         episode_record= []
-        seperate_s_c_episode_record = []
+        separate_s_c_episode_record = []
         # cache_exp_tuple = ()
 
         position = self.current_pos
@@ -279,16 +279,16 @@ class Env():
             # reward, done = self.get_reward(state, next_state, exe_duration)
 
             exp_tuple = (state, action, reward, next_state, done)
-            seperate_s_c_tuple = (position,contact, action, reward, next_position,next_contact, done)
+            separate_s_c_tuple = (position,contact, action, reward, next_position,next_contact, done)
 
             episode_record.append(exp_tuple)
-            seperate_s_c_episode_record.append(seperate_s_c_tuple)
+            separate_s_c_episode_record.append(separate_s_c_tuple)
 
             position = next_position
             contact = next_contact
             state = next_state
 
-        return episode_record, seperate_s_c_episode_record
+        return episode_record, separate_s_c_episode_record
 
 
 

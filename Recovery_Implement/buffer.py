@@ -22,10 +22,10 @@ class Exp_Buffer():
     """
     def __init__(self,batch_size = 4):
         self.memory = []
-        self.seperate_memory = []
+        self.separate_memory = []
         self.batch_size = batch_size
 
-        self.seperate_experience = namedtuple("seperate_Experience", \
+        self.separate_experience = namedtuple("separate_Experience", \
                                  field_names = ["state", "contact", "action", "reward", "next_state", "next_contact", "done"])
 
         self.experience = namedtuple("Experience", \
@@ -37,10 +37,10 @@ class Exp_Buffer():
         e = self.experience(state,  action, reward, next_state, done)
         self.memory.append(e)
 
-    def seperate_add(self, state,contact,  action, reward, next_state,  next_contact, done):
+    def separate_add(self, state,contact,  action, reward, next_state,  next_contact, done):
         """Add a new experience to memory."""
-        e = self.seperate_experience(state, contact, action, reward, next_state, next_contact, done)
-        self.seperate_memory.append(e)
+        e = self.separate_experience(state, contact, action, reward, next_state, next_contact, done)
+        self.separate_memory.append(e)
 
     def batch_sample(self):
         experiences = random.sample(self.memory, k=self.batch_size)
@@ -66,5 +66,5 @@ class Exp_Buffer():
         experience_list = self.memory
         return experience_list
 
-    def get_seperate_exp_list(self):
-        return self.seperate_memory
+    def get_separate_exp_list(self):
+        return self.separate_memory

@@ -3,18 +3,36 @@ import numpy as np
 
 class Env():
 
-    def __init__(self,dim):
+    def __init__(self,dim,final_state_bonus = 100, have_stuck_funnels =False ,add_noise = False, add_pert = False):
         self.goals_list= []
         #  Init the beginnig position of robot.
         self.current_pos = np.zeros(dim)
         self.dim = dim
+
         #  test_perturbation_count used for generate virtual contact mode.
         self.test_perturbation_count = 0
         self.final_goal_state = 0
+
         # self.test_final_goal_state = np.array((300,300))
         self.have_final_goal = False
-
         self.original_skills_amount= 0
+
+        # THe bonus is for the agent when it reach final goal state.
+        self.final_state_bonus = final_state_bonus
+
+        # The agent will execute the demonstraion untill the final action is executed.
+        self.final_action_goal = []
+
+        # Add some noise to the robot movement, and none-zero perturbation for contact mode.
+        self.add_noise = add_noise
+        self.add_pert = add_pert
+
+
+        #  self.big_noise_position test for if there are two output region of an input region when execute an action.
+        self.big_noise_position= np.array((0,10))
+        self.big_noise_shift = np.array((-10,0))
+        self.stuck_region = self.big_noise_position - self.big_noise_shift
+        self.have_stuck_funnels = have_stuck_funnels
 #   Reset the environment to initial state.
 
     def demonstration(self,demo_states_list):
@@ -27,14 +45,16 @@ class Env():
         """
         self.goals_list = demo_states_list
         self.final_goal_state = demo_states_list[-1]
+        self.final_action_goal = demo_states_list[-1]
         self.original_skills_amount = len(demo_states_list)
         print("Env: the original demonstration skills amount is:{} \n".format( self.original_skills_amount))
 
         print("Env: The demonstration is:")
         for i,goal in enumerate(self.goals_list):
             print("point {}: {}".format(i,goal))
-        print("\n")
-        print("Env: The final goal position is:{}".format(self.final_goal_state))
+        print("Env: The final goal position is:{}\n".format(self.final_goal_state))
+        print("Env: The final action goal is:{}\n".format(self.final_action_goal))
+
         return self.goals_list
 
     def get_goals_list(self):
@@ -96,11 +116,12 @@ class Env():
         distance = self.state_distance(position,next_position)
         r= distance
         
-        # if the next state position is in goal region G, which is set in a circle with radius 20.
+        # if the next state position is in goal region G, which is set in a circle with radius 5.
         if task_type == 'maze':
-            if self.state_distance(self.final_goal_state, next_position) > 20:
+            if self.state_distance(self.final_goal_state, next_position) > 3:
                 r += duration
             else:
+                r = r- self.final_state_bonus
                 return -r, True
         return -r, False
 
@@ -133,7 +154,7 @@ class Env():
 
         return contact_mode
 
-    def test_pertubation(self, add_pert = False, delta = 10):
+    def test_pertubation(self,  delta = 10):
         """Executing the reversible perturbation with parameter delta.(for test)
         Param:
             delta(float): the parameter of perturbation
@@ -144,7 +165,7 @@ class Env():
         Note: The reward estimation includes the duration of the relative action execution, 
               and whether the next state is within the goal region G.  
         """
-        if add_pert:
+        if self.add_pert:
             a= self.test_perturbation_count
             # The begining position is a constant.(Because the robot is always reset to a certain position)
             if a == 0:
@@ -174,7 +195,7 @@ class Env():
             # assume the end effector speed is
         return distance/ee_speed
 
-    def test_robot_move(self, goal,  mean = 0, std = 1, add_noise = True):
+    def test_robot_move(self, goal,  mean = 0, std = 1):
         """Move the robot end effector to specific postion, and return the time of duration.
 
         Param:
@@ -195,14 +216,27 @@ class Env():
         #     else :
         #         mean = -5
 
-        if add_noise:
+        if self.add_noise:
             noise_goal = goal + np.random.normal(mean, std, self.dim)
         else:
             noise_goal = goal
 
+        if self.have_stuck_funnels:
+            if (goal == self.big_noise_position).all():
+                # 50% stuck in big_noise_position.
+                if np.random.randn(1) > 0:
+                    noise_goal -= self.big_noise_shift
+
+            if  self.state_distance(self.current_pos,self.stuck_region)< 3:
+                self.current_pos = self.current_pos
+                duration = 0
+                return duration
+
+
         distance = self.state_distance(noise_goal, self.current_pos)
         duration = self.test_duration_func(distance)
         self.current_pos = noise_goal
+
         return duration
 
 
@@ -255,7 +289,7 @@ class Env():
         # cache_exp_tuple = ()
 
         position = self.current_pos
-        contact = self.test_pertubation(add_pert=True)
+        contact = self.test_pertubation()
         state = np.append(position,contact)
 
         # state = self.current_pos
@@ -271,24 +305,23 @@ class Env():
             exe_duration = self.test_robot_move(act_goal)
 
             next_position = self.current_pos
-            next_contact = self.test_pertubation(add_pert=True)
+            next_contact = self.test_pertubation()
             next_state = np.append(next_position,next_contact)
-            # next_state =self.current_pos
 
             reward, done = self.get_reward(position, next_position, exe_duration)
-            # reward, done = self.get_reward(state, next_state, exe_duration)
 
+            # The final state can be those stuck.
+            if (np.array(self.final_action_goal)== np.array(act_goal)).all():
+                done= True
             exp_tuple = (state, action, reward, next_state, done)
-            separate_s_c_tuple = (position,contact, action, reward, next_position,next_contact, done)
 
             episode_record.append(exp_tuple)
-            separate_s_c_episode_record.append(separate_s_c_tuple)
 
             position = next_position
             contact = next_contact
             state = next_state
 
-        return episode_record, separate_s_c_episode_record
+        return episode_record
 
 
 

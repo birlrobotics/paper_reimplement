@@ -27,42 +27,48 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-LR = 5e-4               # learning rate 
-BATCH_SIZE = 3
+
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
 class Agent():
 
-    def __init__(self, seed = 0, dim =2 ):
+    def __init__(self, init_Q_value=0 ,seed = 0, dim =2 , batch_size = 2, lr = 0.1 , gamma=1,tau = 1e-2, if_soft_update =True  ):
 
         """
-        self.demo_act_dict = {a_1: goal_position, ... , a_i: goal_position,... }
-            a_i(int), goal_position(array)
-
-        self.regions_dict = {r_1:(mean,cov), ... , r_i:(mean,cov), ...}
-            r_i(int), mean(array), cov(ndarray)
+        param
+        -----
+        seed(int): random seed
+        dim(int): the dimension of position space (not include the contact dim.)
+        batch_size(int):
+        lr(float):learning rate
+        gamme(float):the discount factor
 
         """
+        # ordered_sample to determine if sequentially draw the sample to update or not
+        self.batch_size = batch_size
+        self.ordered_sample = False
+
+        self.lr = lr
         self.demo_act_dict = OrderedDict()
         self.num_of_demo_goal = 0
         self.demo_goal = []
-        self.q_func = Value_Function()
-        self.memory = Exp_Buffer(batch_size= BATCH_SIZE)
+        self.q_func = Value_Function(lr=lr, gamma = gamma,init_Q_value = init_Q_value, if_soft_update = if_soft_update,tau = tau)
+        self.memory = Exp_Buffer(batch_size= self.batch_size)
 
         self.regions_dict = OrderedDict()
         # The dimension of the workspace (2 or 3).
         self.dim = dim
 #         self.cluster = Region_Cluster()
-
+        self.final_goal_state = 0
         """
         self.act for new skills
         """
         
         self.actions_dict = OrderedDict()
-        self.state_size = dim
+        # the state dim contain the position and contact
+        self.state_size = (dim+dim*2)
         self.action_size = 0
         self.seed = random.seed(seed)
-
 
         self.funnels_infs_list=[]
         
@@ -82,9 +88,10 @@ class Agent():
         for i, goal in enumerate(goal_tuples):
             action_index = str(i)
             self.demo_act_dict[action_index] = goal
-            
+        self.final_goal_state = goal_tuples[-1]
 
         print("Agent: agent has recorded the demonstration as its original skills: {} \n".format(self.demo_act_dict))
+        print("Agent: agent  recorded the final goal state as : {} \n".format(self.final_goal_state))
         return self.demo_act_dict
 
     def get_demo_act_dict(self):
@@ -158,7 +165,7 @@ class Agent():
         pass
 
 
-    def test_generate_funnels_infs_list(self):
+    def test_generate_funnels_infs_list(self, add_stuck_funnels):
         cov = np.eye(self.dim * 3)
         regions = []
         origional_point =  np.zeros(self.dim)
@@ -170,6 +177,9 @@ class Agent():
 
         funnels_infs_list=[]
         for region_position, (key,value) in zip(regions,self.demo_act_dict.items()):
+            
+            if (region_position==np.array(self.final_goal_state)).all():
+                break
             alist = []
             act_dict = {}
             act_dict[key] = value
@@ -186,44 +196,75 @@ class Agent():
             alist.append(region_dict)
 
             funnels_infs_list.append(alist)
+
+# ----------------------define stuck position -----------------------------------------------
+        if add_stuck_funnels:
+            stuck_position = np.array((10,10))
+# ----------------------generate stuck funnels -----------------------------------------------
+            region_position = stuck_position
+            alist = []
+            act_dict = {}
+            act_dict['1'] = [0,20]
+            # Append funnel index
+            alist.append('3')
+            alist.append(act_dict)
+
+            contact_mean = self.test_generate_contact_mean(region_position)
+            mean = np.append(stuck_position, contact_mean)
+            region_dict = {}
+            region_dict['3'] = (mean,cov)
+            alist.append(region_dict)
+            funnels_infs_list.append(alist)
+# # ----------------------generate stuck funnels -----------------------------------------------
+            region_position = stuck_position
+            alist = []
+            act_dict = {}
+            act_dict['2'] =[0,30]
+            # Append funnel index
+            alist.append('4')
+            alist.append(act_dict)
+
+            contact_mean = self.test_generate_contact_mean(region_position)
+            mean = np.append(stuck_position, contact_mean)
+            region_dict = {}
+            region_dict['3'] = (mean,cov)
+            alist.append(region_dict)
+            funnels_infs_list.append(alist)
+# # -------------------------------------------------------------------------------------------------
+
         print("Agent: test funnels infs:{} \n".format(funnels_infs_list))
         return funnels_infs_list
             
     def test_generate_contact_mean(self, position):
         return np.zeros(self.dim*2)
 
-    def test_init_value_function(self,funnels_infs_list,init_Q_value):
+    def test_init_value_function(self,funnels_infs_list):
         """Initialization of the approximate value function with the amount of funnels.
         """
         self.funnels_amount = len(funnels_infs_list)
         self.funnels_infs_list = funnels_infs_list
         # Initialize the q function with th funnels information.
-        self.q_func.init_funnels_inf(self.funnels_amount, self.demo_act_dict, funnels_infs_list,init_Q_value )
+        self.q_func.init_funnels_inf(self.funnels_amount, self.demo_act_dict, funnels_infs_list )
 
-    def test_learn_initial_policy(self):
+    def test_learn_initial_policy(self, learn_method ='approximation', ordered_sample = False):
+        self.ordered_sample = ordered_sample
         """Learn the policy with the original experience tuple.
         """
-        states,actions,rewards,next_states,dones = self.memory.batch_sample()
-        loss = self.q_func.q_learn(states,actions,rewards,next_states,dones)
-        return loss
-    
+        if learn_method == 'approximation' :
+            states,actions,rewards,next_states,dones = self.memory.batch_sample(learn_method=learn_method, ordered_sample = ordered_sample)
+            loss = self.q_func.q_learn(states,actions,rewards,next_states,dones)
+            return loss
+
+        elif learn_method == 'Q table'  :
+            experience = self.memory.batch_sample(learn_method=learn_method, ordered_sample = ordered_sample)
+            self.q_func.q_table_learn(experience)
+            return self.q_func.print_Q_table()
+
+
+
+
     def get_funnels_q_value(self):
         return self.q_func.get_funnels_q()
-
-
-        #  not done
-    def soft_update(self, local_model, target_model, tau):
-        """Soft update model parameters.
-
-        Params
-        ======
-            local_model (PyTorch model): weights will be copied from
-            target_model (PyTorch model): weights will be copied to
-            tau (float): interpolation parameter
-        """
-        pass
-        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
-            target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
 
 

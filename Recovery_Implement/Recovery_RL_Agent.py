@@ -49,10 +49,13 @@ class Agent():
         self.ordered_sample = False
 
         self.lr = lr
-        self.demo_act_dict = OrderedDict()
+        self.demo_acts_dict = OrderedDict()
         self.num_of_demo_goal = 0
         self.demo_goal = []
-        self.q_func = Value_Function(lr=lr, gamma = gamma,init_Q_value = init_Q_value, if_soft_update = if_soft_update,tau = tau)
+        self.gamma = gamma
+        self.tau = tau
+        self.if_soft_update = if_soft_update
+        self.init_Q_value = init_Q_value
         self.memory = Exp_Buffer(batch_size= self.batch_size)
 
         self.regions_dict = OrderedDict()
@@ -70,7 +73,7 @@ class Agent():
         self.action_size = 0
         self.seed = random.seed(seed)
 
-        self.funnels_infs_list=[]
+        self.funnels_inf_list=[]
         
         self.funnels_amount= 0
         self.separate_s_c_exp_list = []
@@ -79,31 +82,31 @@ class Agent():
         """To record a task demonstration skill with several goal states,
         i.e. the goal 3D position of each initial skill.
         Use ROS interface to get the position information of robot.
-        Parameters
-        ----------
-        goal_tuples:(2 dim array)
+
+        Parameters:
+            goal_tuples(list):a list of 2 or 3 dim array.
         """
         self.demo_goal = goal_tuples
         self.demo_amount = len(goal_tuples)
         for i, goal in enumerate(goal_tuples):
             action_index = str(i)
-            self.demo_act_dict[action_index] = goal
+            self.demo_acts_dict[action_index] = goal
         self.final_goal_state = goal_tuples[-1]
 
-        print("Agent: agent has recorded the demonstration as its original skills: {} \n".format(self.demo_act_dict))
+        print("Agent: agent has recorded the demonstration as its original skills: {} \n".format(self.demo_acts_dict))
         print("Agent: agent  recorded the final goal state as : {} \n".format(self.final_goal_state))
-        return self.demo_act_dict
+        return self.demo_acts_dict
 
-    def get_demo_act_dict(self):
+    def get_demo_acts_dict(self):
         """Return the action dictionary of demonstration
         Return
         ----------
-        demo_act_dict:(dict)
-            keys: index string
-            values: goal position
+        demo_acts_dict:(dict)
+            keys(string): index 
+            values(tuple): goal position
         """
-        self.demo_act_dict
-        return self.demo_act_dict
+        self.demo_acts_dict
+        return self.demo_acts_dict
 
     def exp_record(self,episode_list):
         """Record experience tuples of an episode to experience list
@@ -165,7 +168,7 @@ class Agent():
         pass
 
 
-    def test_generate_funnels_infs_list(self, add_stuck_funnels):
+    def test_generate_funnels_inf_list(self, add_stuck_funnels):
         cov = np.eye(self.dim * 3)
         regions = []
         origional_point =  np.zeros(self.dim)
@@ -175,8 +178,8 @@ class Agent():
 
         self.funnels_amount = len(regions)
 
-        funnels_infs_list=[]
-        for region_position, (key,value) in zip(regions,self.demo_act_dict.items()):
+        funnels_inf_list=[]
+        for region_position, (key,value) in zip(regions,self.demo_acts_dict.items()):
             
             if (region_position==np.array(self.final_goal_state)).all():
                 break
@@ -195,7 +198,7 @@ class Agent():
 
             alist.append(region_dict)
 
-            funnels_infs_list.append(alist)
+            funnels_inf_list.append(alist)
 
 # ----------------------define stuck position -----------------------------------------------
         if add_stuck_funnels:
@@ -214,7 +217,7 @@ class Agent():
             region_dict = {}
             region_dict['3'] = (mean,cov)
             alist.append(region_dict)
-            funnels_infs_list.append(alist)
+            funnels_inf_list.append(alist)
 # # ----------------------generate stuck funnels -----------------------------------------------
             region_position = stuck_position
             alist = []
@@ -229,42 +232,41 @@ class Agent():
             region_dict = {}
             region_dict['3'] = (mean,cov)
             alist.append(region_dict)
-            funnels_infs_list.append(alist)
+            funnels_inf_list.append(alist)
 # # -------------------------------------------------------------------------------------------------
 
-        print("Agent: test funnels infs:{} \n".format(funnels_infs_list))
-        return funnels_infs_list
+        print("Agent: test funnels infs:{} \n".format(funnels_inf_list))
+        return funnels_inf_list
             
     def test_generate_contact_mean(self, position):
         return np.zeros(self.dim*2)
 
-    def test_init_value_function(self,funnels_infs_list):
+    def test_init_value_function(self,funnels_inf_list):
         """Initialization of the approximate value function with the amount of funnels.
         """
-        self.funnels_amount = len(funnels_infs_list)
-        self.funnels_infs_list = funnels_infs_list
-        # Initialize the q function with th funnels information.
-        self.q_func.init_funnels_inf(self.funnels_amount, self.demo_act_dict, funnels_infs_list )
+        self.funnels_amount = len(funnels_inf_list)
+        self.funnels_inf_list = funnels_inf_list
 
-    def test_learn_initial_policy(self, learn_method ='approximation', ordered_sample = False):
-        self.ordered_sample = ordered_sample
+        self.qlearning_method = Value_Function(lr=self.lr, demo_acts_dict = self.demo_acts_dict, \
+                                        funnels_inf_list = self.funnels_inf_list,gamma = self.gamma,\
+                                        init_Q_value = self.init_Q_value, if_soft_update = self.if_soft_update,tau = self.tau)
+
+
+
+    def test_learn_initial_policy(self):
         """Learn the policy with the original experience tuple.
         """
-        if learn_method == 'approximation' :
-            states,actions,rewards,next_states,dones = self.memory.batch_sample(learn_method=learn_method, ordered_sample = ordered_sample)
-            loss = self.q_func.q_learn(states,actions,rewards,next_states,dones)
-            return loss
+        experiences = self.memory.batch_sample()
+        # step
+        loss = self.qlearning_method.new_q_learn(experiences)
+        self.qlearning_method.soft_update()
+        return loss
 
-        elif learn_method == 'Q table'  :
-            experience = self.memory.batch_sample(learn_method=learn_method, ordered_sample = ordered_sample)
-            self.q_func.q_table_learn(experience)
-            return self.q_func.print_Q_table()
-
-
-
+    def pick_act(self,state):
+        self.qlearning_method
 
     def get_funnels_q_value(self):
-        return self.q_func.get_funnels_q()
+        return self.qlearning_method.get_param()
 
 
 

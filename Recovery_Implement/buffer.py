@@ -47,36 +47,12 @@ class Exp_Buffer():
             self.memory.reverse()
             self.memory_is_reverse = True
         
-    def batch_sample(self,learn_method = 'approximation', ordered_sample = False):
+    def batch_sample(self):
 
-# --------------------------In Q table method, just return one sample--------------------
-        if  (learn_method == 'Q table') and (ordered_sample==True):
-            self.reverse_memory_list()
-            experience = self.memory[self.order]
-            self.order += 1
-            if self.order >= len(self.memory):
-            # If run out of buffer experience tuple, re-run again.
-                self.order = 0
-            return experience
 
-        elif  (learn_method == 'Q table') and (ordered_sample==False):
-            experience = random.sample(self.memory, k=1)
-            return experience[0]
 
-# --------------------------In Approximation method, return a least two samples --------------------
-
-        elif (learn_method == 'approximation') and (ordered_sample == False):
-            experiences = random.sample(self.memory, k=self.batch_size)
-
-        elif (learn_method == 'approximation') and (ordered_sample==True) : 
-            self.reverse_memory_list()
-            experiences = self.memory[self.order : (self.order+self.batch_size)]
-            self.order += self.batch_size
-            # If run out of buffer experience tuple, re-run again.
-            if self.order >= len(self.memory) :
-                self.order = 0
-# ------------------------------------------------------------------------------------- --------------------
-
+# -------------------------------------------new_q_learn------------------------------------------ --------------------
+        experiences = random.sample(self.memory, k=self.batch_size)
 
         # np.vstack: reshape list to ndarray, column shape (n,1).
         states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float()

@@ -22,11 +22,8 @@ class Exp_Buffer():
     """
     def __init__(self,batch_size = 2):
         self.memory = []
-        self.separate_memory = []
         self.batch_size = batch_size
         self.order = 0
-        self.separate_experience = namedtuple("separate_Experience", \
-                                 field_names = ["state", "contact", "action", "reward", "next_state", "next_contact", "done"])
 
         self.experience = namedtuple("Experience", \
                                  field_names = ["state", "action", "reward", "next_state", "done"])
@@ -37,10 +34,6 @@ class Exp_Buffer():
         e = self.experience(state,  action, reward, next_state, done)
         self.memory.append(e)
 
-    def separate_add(self, state,contact,  action, reward, next_state,  next_contact, done):
-        """Add a new experience to memory."""
-        e = self.separate_experience(state, contact, action, reward, next_state, next_contact, done)
-        self.separate_memory.append(e)
 
     def reverse_memory_list(self):
         if self.memory_is_reverse == False:
@@ -79,6 +72,3 @@ class Exp_Buffer():
     def get_experience_list(self):
         experience_list = self.memory
         return experience_list
-
-    def get_separate_exp_list(self):
-        return self.separate_memory

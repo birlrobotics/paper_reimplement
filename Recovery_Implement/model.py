@@ -47,7 +47,7 @@ class LR(nn.Module):
                 numerator =self.q_network(mul_fac)
                 denominator= sum(mul_fac.squeeze())
                 # If the denominator is 0, there will be an NaN result
-                if denominator  >= 1.0e-20:
+                if denominator  >= 1.0e-30:
                     Q_s_a = numerator/denominator
                 else:
                     Q_s_a = self.init_Q_value

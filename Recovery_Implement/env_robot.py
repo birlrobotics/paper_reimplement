@@ -166,12 +166,14 @@ class Env():
               and whether the next state is within the goal region G.  
         """
         if self.add_pert:
+            # pert = np.random.normal(0, 0.2, self.dim *2)
+
             a= self.test_perturbation_count
             # The begining position is a constant.(Because the robot is always reset to a certain position)
             if a == 0:
                 pert = np.zeros( self.dim *2)
             else:
-                pert = np.random.normal(0.25 * a, 0.07, self.dim *2)
+                pert = np.random.normal(1 * a, 0.5, self.dim *2)
 
             self.test_perturbation_count += 1
             if self.test_perturbation_count == (self.original_skills_amount+1):
@@ -195,7 +197,7 @@ class Env():
             # assume the end effector speed is
         return distance/ee_speed
 
-    def test_robot_move(self, goal,  mean = 0, std = 1):
+    def test_robot_move(self, goal,  mean = 0, std = 0.5):
         """Move the robot end effector to specific postion, and return the time of duration.
 
         Param:
@@ -228,8 +230,13 @@ class Env():
                     noise_goal -= self.big_noise_shift
 
             if  self.state_distance(self.current_pos,self.stuck_region)< 3:
-                self.current_pos = self.current_pos
-                duration = 0
+                if self.add_noise:
+                    noise_goal = self.current_pos + np.random.normal(mean, std, self.dim)
+                else:
+                    noise_goal = self.current_pos
+                distance = self.state_distance(noise_goal, self.current_pos)
+                duration = self.test_duration_func(distance)
+                self.current_pos = noise_goal
                 return duration
 
 
@@ -273,7 +280,7 @@ class Env():
 #       episode_record: An episode experience. Restored as a list of
 #       namedtuple [(s,z,a,r,s',z',),(s,z,a,r,s',z',),(s,z,a,r,s',z',),...]
 
-    def execute_separate_demo_act(self,execute_demo_act_dict):
+    def execute_demo_act(self,execute_demo_act_dict):
         """Robot executes the demo action
         Param:
             execute_demo_act_list(list): input a list of action for execution.

@@ -13,17 +13,16 @@ import random
 from math import log
 import matplotlib.pyplot as plt
 
-LR = 1e-3              # learning rate 
+LR = 1e-2              # learning rate 
 BATCH_SIZE = 2          # Only for approximation, the Q table cannot batch update.
 GAMMA = 1
 HAVE_STUCK = True              # if True, it will include the stuck situation
-EPOCHES = 200
-MAX_T = 1000    
-LEARN_METHOD = 'new_q_learn'        # 'Q table' or 'approximation'
-ADD_NOISE = False
-ADD_PERT = False                          # If false, all the contact mode is zero.
+EPOCHES = 100
+MAX_T = 100    
+ADD_NOISE = True
+ADD_PERT = True                          # If false, all the contact mode is zero.
 SOFT_UPDATE = True
-INIT_Q_VALUE = (0)
+INIT_Q_VALUE = (-10000)
 TAU = 1e-3
 
 
@@ -34,7 +33,7 @@ def training(agent,epoches,max_t):
         for i_epoch in range(epoches):
                 total_loss = 0
                 for t in range(max_t):
-                        loss = agent.test_learn_initial_policy()
+                        loss = agent.learn_initial_policy()
                         total_loss += loss
                         mean_loss = total_loss/(t+1)
                         print('\rEpisode {}\tloss: {:.5f}'.format(i_epoch, loss),end = "")
@@ -75,10 +74,11 @@ robot.demonstration(demo_position_list)
 demo_act_dict = agent.demo_record(demo_position_list)
 
 # ------------------------------------------Generate exp tuples------------------------------------------
-repeat_times = 1000
+repeat_times = 100
+
 for i in range(0,repeat_times):
     # executing the demo action and restore experience tuples in agent
-    episode_record = robot.execute_separate_demo_act(demo_act_dict)
+    episode_record = robot.execute_demo_act(demo_act_dict)
     
     agent.exp_record(episode_record)
     # Reset env, back to start point
@@ -90,8 +90,9 @@ for i in range(0,repeat_times):
 
 
 # ------------------------------------------Get Funnels information------------------------------------------
-funnels_infs_list = agent.test_generate_funnels_inf_list(add_stuck_funnels  = HAVE_STUCK)
-agent.test_init_value_function(funnels_infs_list)
+agent.learn_funnels_infs()
+
+agent.init_value_function()
 # ----------------------------------------------------------------------------------------------------------
 
 

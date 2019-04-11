@@ -45,7 +45,7 @@ class Value_Function():
 
 # # -------------------------New approximation----------------------------------------------------------------------------
     
-    def new_q_learn(self,experiences):
+    def q_learn(self,experiences):
         """
         Update the q parameters with expereience tuples.
 
@@ -55,11 +55,11 @@ class Value_Function():
         states,actions,rewards,next_states,dones = experiences
         # forward
         if self.if_soft_update:
-            Q_targets_next = self.target_q_model.new_qforward(next_states).detach().max(1)[0].unsqueeze(dim=1)
+            Q_targets_next = self.target_q_model.qforward(next_states).detach().max(1)[0].unsqueeze(dim=1)
         else:
-            Q_targets_next = self.local_q_model.new_qforward(next_states).max(1)[0].unsqueeze(dim=1)
-        Q_targets = rewards + Q_targets_next * (1-dones)
-        Q_expects = self.local_q_model.new_qforward(states).gather(1,actions)
+            Q_targets_next = self.local_q_model.qforward(next_states).max(1)[0].unsqueeze(dim=1)
+        Q_targets = rewards + self.gamma*Q_targets_next * (1-dones)
+        Q_expects = self.local_q_model.qforward(states).gather(1,actions)
         loss = self.mse_loss(Q_expects, Q_targets)
 
         # backward
@@ -75,6 +75,10 @@ class Value_Function():
         for local_param, target_param in zip(self.local_q_model.parameters(), self.target_q_model.parameters()):
             target_param.data.copy_(self.tau * local_param.data + (1.0 - self.tau) * target_param.data)
             
+    def forward(self,state):
+        Q_s_tensor = self.local_q_model.qforward(state).max(0)
+        return Q_s_tensor
+
     def get_param(self):
         """
         Return the q.

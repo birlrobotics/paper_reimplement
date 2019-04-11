@@ -70,7 +70,7 @@ class LR(nn.Module):
         """ 
         if_act_same = np.zeros(self.funnels_amount)
         region_prob = np.zeros(self.funnels_amount)
-        for i,a_i, r_i in self.funnels_inf_list:
+        for i,a_i, r_i, i_son, i_father in self.funnels_inf_list:
             i = int(i)
     #              delta function for action. If the actions are same, set relative region to 1
             if a_i.keys() == a_dict.keys():

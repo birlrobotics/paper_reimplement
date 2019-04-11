@@ -24,7 +24,7 @@ ADD_PERT = True                          # If false, all the contact mode is zer
 SOFT_UPDATE = True
 INIT_Q_VALUE = (-10000)
 TAU = 1e-3
-
+GRAHD_THRESHOLD = 0.1
 
 def training(agent,epoches,max_t):
         training_loss=[]
@@ -91,7 +91,7 @@ for i in range(0,repeat_times):
 
 # ------------------------------------------Get Funnels information------------------------------------------
 agent.learn_funnels_infs()
-
+agent.learn_funnels_directed_graph(directed_graph_threshold = GRAHD_THRESHOLD)
 agent.init_value_function()
 # ----------------------------------------------------------------------------------------------------------
 

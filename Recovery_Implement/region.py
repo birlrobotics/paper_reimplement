@@ -137,7 +137,7 @@ class Region_Cluster():
         frst_funnel_inf_list.append(frist_funnel_region_dict)
 
         return_set.insert(0,frst_funnel_inf_list)
-        print("funnels_inf_list",return_set)
+        # print("funnels_inf_list",return_set)
         return return_set
 
     def extract_exp_with_same_action(self, act_index):

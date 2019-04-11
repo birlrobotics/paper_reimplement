@@ -28,6 +28,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from region import Region_Cluster
 from scipy.special import softmax
+from scipy.stats import multivariate_normal
 
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
@@ -93,6 +94,8 @@ class Agent():
 
         print("Agent: agent has recorded the demonstration as its original skills: {} \n".format(self.demo_acts_dict))
         print("Agent: agent  recorded the final goal state as : {} \n".format(self.final_goal_state))
+        self.action_size = len(self.demo_acts_dict)
+
         return self.demo_acts_dict
 
     def get_demo_acts_dict(self):
@@ -131,7 +134,12 @@ class Agent():
     def learn_funnels_infs(self):
         experiences_list = self.memory.get_experience_list()
         self.funnels_inf_list = self.funnels.learn_funnels(experiences_list, self.demo_acts_dict)
-
+        for funnel in self.funnels_inf_list:
+            son_list = []
+            father_list = []
+            funnel.append(son_list)
+            funnel.append(father_list)
+            
     def get_funnels_amount(self):
         """Get the amount of funnels.
         Return
@@ -143,10 +151,38 @@ class Agent():
 
 
 
-    def region_directed_graph(self):
+    def learn_funnels_directed_graph(self,directed_graph_threshold, clip_threshold =1e-15 ):
         """Construct region directed graph used for algorithm 2.
         """
-        pass
+        # Clip the probability, to avoid the final funnel have wierd son funnel.
+
+        exps_list = self.memory.get_experience_list()
+        for i,a_i, r_i, i_son, _ in self.funnels_inf_list:
+            score_i_list=[]
+            for j, a_j ,r_j, _, _ in self.funnels_inf_list:
+                score_i_j = 0
+                # Here will inlude the score_i_i = 0 , donnot know whether this will affect the result.
+                if i != j:
+                    # Integrate all the exp tuples
+                    for exp in exps_list:
+                        phi_i = multivariate_normal.pdf(exp.state, r_i.values()[0][0], r_i.values()[0][1])
+                        phi_i = phi_i if phi_i > clip_threshold else 0
+
+                        psi_j = multivariate_normal.pdf(exp.next_state, r_j.values()[0][0], r_j.values()[0][1])
+                        psi_j = psi_j if psi_j > clip_threshold else 0
+
+                        score_i_j += phi_i * psi_j                # multiply 1e+3 to avoid vanishing.
+                score_i_list.append(score_i_j)
+
+            denominator = sum(score_i_list)
+            # comput the transition probability
+            i_probs = score_i_list / denominator if denominator != 0 else np.zeros(len(score_i_list))
+            # construct the directed relationship
+            for j, a_j ,r_j, j_son, j_father  in self.funnels_inf_list:
+                if i_probs[j] > directed_graph_threshold:
+                    i_son.append(j)
+                    j_father.append(i)
+        print(self.funnels_inf_list)
 
     def init_value_function(self):
         """Initialization of the approximate value function with the amount of funnels.
@@ -169,17 +205,17 @@ class Agent():
         return loss
 
     def choose_act(self,state):
+        picked_action_dict = {}
+        # Forward the state to get all action Q
         Q_s_tensor = self.qlearning_method.forward(state)
+        # Convert to probability using softmax
         action_prob_vector = softmax(Q_s_tensor)
-        np.random.choice(demo_acts_dict,p = action_prob_vector)
-
-
-        Qmax, argmax_a_index = Q_s_tensor.max(0)
-
-        return_a_dict = {}
-        return_a_dict[argmax_a_index] = self.demo_acts_dict[argmax_a_index]
-
-        return return_a_dict
+        # Pick the action under that probability
+        a_index = np.arange(self.action_size)
+        picked_a_index = np.random.choice( a_index, p = action_prob_vector)
+        # Return the picked action dict
+        picked_action_dict[str(picked_a_index)] = self.demo_acts_dict[str(picked_a_index)]
+        return picked_action_dict
 
     def get_funnels_q_value(self):
         return self.qlearning_method.get_param()

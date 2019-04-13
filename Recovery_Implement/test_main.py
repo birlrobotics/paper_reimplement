@@ -69,12 +69,12 @@ def plot_loss(training_loss):
 
 robot = env_robot.Env(dim=2,have_stuck_funnels= HAVE_STUCK, add_noise=ADD_NOISE,add_pert= ADD_PERT,)
 agent = Recovery_RL_Agent.Agent(init_Q_value = INIT_Q_VALUE,dim=2,batch_size= BATCH_SIZE, lr=LR ,gamma=GAMMA,if_soft_update = SOFT_UPDATE, tau = TAU)
-demo_position_list =  [[0,10],[0,20],[0,30]]
+demo_position_list =  [[10,0],[20,0],[30,0]]
 robot.demonstration(demo_position_list)
 demo_act_dict = agent.demo_record(demo_position_list)
 
 # ------------------------------------------Generate exp tuples------------------------------------------
-repeat_times = 100
+repeat_times = 20
 
 for i in range(0,repeat_times):
     # executing the demo action and restore experience tuples in agent
@@ -89,13 +89,17 @@ for i in range(0,repeat_times):
 # ----------------------------------------------------------------------------------------------------------
 
 
-# ------------------------------------------Get Funnels information------------------------------------------
+# # ------------------------------------------Get Funnels information------------------------------------------
 agent.learn_funnels_infs()
 agent.learn_funnels_directed_graph(directed_graph_threshold = GRAHD_THRESHOLD)
-agent.init_value_function()
-# ----------------------------------------------------------------------------------------------------------
+# agent.plot_funnels_points()
+agent.plot_funnels_directed_graph()
+# agent.init_value_function()
+# # ----------------------------------------------------------------------------------------------------------
 
 
 
 
-training(agent, epoches = EPOCHES, max_t = MAX_T)
+# training(agent, epoches = EPOCHES, max_t = MAX_T)
+
+

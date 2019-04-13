@@ -29,6 +29,7 @@ import torch.optim as optim
 from region import Region_Cluster
 from scipy.special import softmax
 from scipy.stats import multivariate_normal
+import matplotlib.pyplot as plt
 
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
@@ -220,5 +221,82 @@ class Agent():
     def get_funnels_q_value(self):
         return self.qlearning_method.get_param()
 
+    def plot_funnels_points(self):
+        exps_list = self.memory.get_experience_list()
+        # Only need to init subplot one time.
+        figsize = 20,8
+        figure, ax = plt.subplots(figsize=figsize)
+        coArray=['g','m','c','gold',"r",'b','w','k']
+        shArray = ["D","o","p","s",'v',"X"]
+        for i,a_i, r_i, _, _ in self.funnels_inf_list:
+            funnel_points_x_list = []
+            funnel_points_y_list = []
+            for exp in exps_list:
+                # Plot each tuple transition line
+                tuple_transition_line_x = []
+                tuple_transition_line_y = []
+                tuple_transition_line_x.append(exp.state[0])
+                tuple_transition_line_x.append(exp.next_state[0])
+                tuple_transition_line_y.append(exp.state[1]) 
+                tuple_transition_line_y.append(exp.next_state[1])
+                plt.plot(tuple_transition_line_x, tuple_transition_line_y ,color='gray', linewidth=0.4 , alpha =0.05 ) 
+                # Plot each funnel ponits
+                if exp.action == a_i and  multivariate_normal.pdf(exp.state, r_i.values()[0][0], r_i.values()[0][1]) > 1e-5:
+                    funnel_points_x_list.append(exp.state[0])
+                    funnel_points_y_list.append(exp.state[1])
+            # Pop out different shape and color for plot
+            colour =  coArray.pop(0)
+            shape =  shArray.pop(0)
+            plt.scatter(funnel_points_x_list, funnel_points_y_list, color=colour, marker = shape, s= 40,linewidths=[0.5], edgecolors='black' )
+        # Draw the terminate point with 'done' = True
+        final_region_point_x = []
+        final_region_point_y = []
+        for exp in exps_list:    
+            if exp.done == True:
+                final_region_point_x.append(exp.next_state[0])
+                final_region_point_y.append(exp.next_state[1])
+        plt.scatter(final_region_point_x, final_region_point_y, color='black', marker = "X", s= 100,alpha = 0.3, linewidths=[0.5], edgecolors='black' )
+        # Show all the plot.
+        plt.ylabel('y')
+        plt.xlabel('x')
+        plt.savefig('transition_plot.pdf')
+        plt.show()
 
+    def plot_funnels_directed_graph(self):
+        figsize = 20,8
+        figure, ax = plt.subplots(figsize=figsize)
+        coArray=['g','m','c','gold',"r",'b','w','k']
+        # First, draw all the funnels regions.
+        for i,a_i, r_i, i_sons, _ in self.funnels_inf_list:
+            x = r_i.values()[0][0][0]
+            y = r_i.values()[0][0][1]
+            colour =  coArray.pop(0)
+            plt.scatter(x, y, color=colour, s= 6000,alpha = 0.4, linewidths=[1], edgecolors='black' )
+        colour =  coArray.pop(0)
+        plt.scatter(30, 0, color=colour, s= 1,alpha = 0.001, linewidths=[1], edgecolors='black' )
 
+        # Second, Draw all the arrow to represent the directed graph.
+        coArray=['g','m','c','gold',"r",'b','w','k']
+        shift = -0.5
+        for i,a_i, r_i, i_sons, _ in self.funnels_inf_list:
+            father_x = r_i.values()[0][0][0]
+            father_y = r_i.values()[0][0][1]
+            colour =  coArray.pop(0)
+            for son_index in i_sons:
+                son_x = self.funnels_inf_list[son_index][2].values()[0][0][0]
+                son_y = self.funnels_inf_list[son_index][2].values()[0][0][1]
+                plt.annotate('.',xy=(son_x,son_y),xytext=(father_x,father_y),arrowprops=dict(alpha= 0.4,facecolor=colour,arrowstyle="fancy,head_length=1.5,head_width=1.5,tail_width=1",connectionstyle="angle3,angleA=0,angleB=-90"))
+                plt.text(father_x+(son_x - father_x)/2 +shift,father_y+(son_y - father_y)/2+shift,'funnel {}'.format(i),fontsize=15)
+                shift = -shift
+
+        # Compute the finnal region (manually compute for a specific situation, should ask Jim to compute the mean of the final region)
+        son_index = self.funnels_inf_list[1][3][0]
+        father_x = self.funnels_inf_list[son_index][2].values()[0][0][0]
+        father_y = self.funnels_inf_list[son_index][2].values()[0][0][1]
+        plt.annotate('.',xy=(30,0),xytext=(father_x,father_y),arrowprops=dict(alpha= 0.4,facecolor='gold',arrowstyle="fancy,head_length=1.5,head_width=1.5,tail_width=1",connectionstyle="angle3,angleA=0,angleB=-90"))
+        plt.text(25 +shift,0+shift,'funnel {}'.format(3),fontsize=15)
+        plt.title(r'Directed Graph of Funnels',fontproperties='SimHei',fontsize=20)
+        plt.ylabel('y')
+        plt.xlabel('x')
+        plt.savefig('directed_graph_plot.pdf')
+        plt.show()

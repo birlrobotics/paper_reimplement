@@ -29,8 +29,8 @@ class Env():
 
 
         #  self.big_noise_position test for if there are two output region of an input region when execute an action.
-        self.big_noise_position= np.array((0,10))
-        self.big_noise_shift = np.array((-10,0))
+        self.big_noise_position= np.array((10,0))
+        self.big_noise_shift = np.array((0,-10))
         self.stuck_region = self.big_noise_position - self.big_noise_shift
         self.have_stuck_funnels = have_stuck_funnels
 #   Reset the environment to initial state.
@@ -197,7 +197,7 @@ class Env():
             # assume the end effector speed is
         return distance/ee_speed
 
-    def test_robot_move(self, goal,  mean = 0, std = 0.5):
+    def test_robot_move(self, goal,  mean = 0, std = 0.6):
         """Move the robot end effector to specific postion, and return the time of duration.
 
         Param:
@@ -229,7 +229,7 @@ class Env():
                 if np.random.randn(1) > 0:
                     noise_goal -= self.big_noise_shift
 
-            if  self.state_distance(self.current_pos,self.stuck_region)< 3:
+            if  self.state_distance(self.current_pos,self.stuck_region)< 3.0:
                 if self.add_noise:
                     noise_goal = self.current_pos + np.random.normal(mean, std, self.dim)
                 else:

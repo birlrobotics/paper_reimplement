@@ -16,48 +16,47 @@ import clustering
 
 class Region_Cluster():
     """Learning stribution State Distribution Components.
-
     Parameters
     ----------
     experience_list : list
         a list of experience namedtuples: [(s,z,a,r,s',z'),(s,z,a,r,s',z'),...].
     action_dict : list
         a dict of demonstration actions.
-
     Return
     ------
     return_set : list
 	    A set of each region which having mean and covariance matrix correspond.
-
     Examples
     --------
     >>>
-
     Notes
     -----
     phi_set is the lower case phi, region_phi_set is the capital case phi\
         (which always has the prefix region_).
     psi_set is the lower case psi, region_psi_set is the capital case psi\
         (which always has the prefix region_).
-
     References
     ----------
-
     """
 
 
-    def __init__(self, experience_list, action_dict):
-        self.e_list = experience_list
-        self.a_dict = action_dict
-
-    def learn_state_region(self,):
+    def __init__(self, dim =1 ):
+        self.e_list = []
+        self.a_dict = []
+        self.dim = dim
+    def learn_funnels(self,experience_list, action_dict):
         """
         Algo 1 in the recovery paper and add total DBSCAN with bhatt distance \
          in the end
         """
         # line 2
-        return_set_set = []
-        for act_index in self.a_dict:
+        self.e_list = experience_list
+        self.a_dict = action_dict
+        return_set = []
+        funnel_index = 0
+        region_index = 0
+
+        for (act_index, act_value) in self.a_dict.items():
             # line 3
             region_phi_hat_set = []
             same_act_exp_set = self.extract_exp_with_same_action(act_index)
@@ -75,24 +74,64 @@ class Region_Cluster():
             # P is a set of capital regions
             P = self.cluster(region_phi_hat_set, component= 'current', \
                 distance_type = 'region_dist')
-            if P != []:
-                return_set_set.extend(P)
-        #At the end, use Bhatt distance to cluster with total region after \
-        # clustered by every same action set
-        ## TODO:check bhatt distance
-        cluster = clustering.DBSCAN(return_set_set, 0.05, minpts=2, metric='B')
-        classifications_b = cluster.dbscan()
-        # The six lines below are to save the single distribution region
-        # Becasue there have no noise region in this region_set
-        if classifications_b != []:
-            a = max(classifications_b)
-            address_class = [x for x in range(len(classifications_b)) if\
-                classifications_b[x] == -1]
-            for k in address_class:
-                classifications_b[k]=1+a
-                a += 1
-        return_set = self.clustered_batch(classifications_b, return_set_set, \
-            metric='extend')
+            
+            for region_distribution in P:
+                if region_distribution != []:
+                    alist = []
+                    # funnel dictionary
+                    funnel_index += 1
+                    alist.append(funnel_index)
+
+                    # action dictionary
+                    action_dict = {}
+                    action_dict[act_index] = act_value
+                    alist.append(action_dict)
+
+                    # region dictionary
+                    region_dict = {}
+                    region_index += 1
+                    region_dict[region_index] = region_distribution
+                    alist.append(region_dict)
+
+                    return_set.append(alist)
+        # #At the end, use Bhatt distance to cluster with total region after \
+        # # clustered by every same action set
+        # cluster = clustering.DBSCAN(return_set_set_region, 0.05, minpts=2, metric='B')
+        # classifications_b = cluster.dbscan()
+        # # The six lines below are to save the single distribution region
+        # # Becasue there have no noise region in this region_set
+        # if classifications_b != []:
+        #     a = max(classifications_b)
+        #     address_class = [x for x in range(len(classifications_b)) if\
+        #         classifications_b[x] == -1]
+        #     for k in address_class:
+        #         classifications_b[k]=1+a
+        #         a += 1
+        # return_set = self.clustered_batch(classifications_b, return_set_set, \
+        #     metric='extend')
+
+        # From Bourne: Insert the beginning funnels
+
+        first_funnel_index = 0
+        frist_funnel_action_dict={}
+        for key,value in self.a_dict.items():
+            frist_funnel_action_dict[key] = value
+            # Just need the first act dict
+            break
+
+        first_region_index = 0
+        frist_funnel_region_dict = {}
+        region_1_mean = np.zeros(self.dim*3)
+        region_1_cov = np.eye(self.dim*3)
+        frist_funnel_region_dict[first_region_index] = (region_1_mean,region_1_cov)
+
+        frst_funnel_inf_list = []
+        frst_funnel_inf_list.append(first_funnel_index)
+        frst_funnel_inf_list.append(frist_funnel_action_dict)
+        frst_funnel_inf_list.append(frist_funnel_region_dict)
+
+        return_set.insert(0,frst_funnel_inf_list)
+        # print("funnels_inf_list",return_set)
         return return_set
 
     def extract_exp_with_same_action(self, act_index):
@@ -131,7 +170,6 @@ class Region_Cluster():
             And each region is a set of bunch of experience tuples.
         component : str
             Cluster on which component, 'states' or 'next_states'.
-
         Return
         ------
         cb : list
@@ -153,7 +191,7 @@ class Region_Cluster():
             else:
                 # use DBSCAN with Bhat Distance to create the distribution bunch
                 d = self.moment(input_set) # return the distribution set
-                cluster = clustering.DBSCAN(d, 0.05, minpts=2, metric='B')## TODO: verify with 1-D 2_D
+                cluster = clustering.DBSCAN(d, 0.05, minpts=2, metric='B')
                 classifications_b = cluster.dbscan()
                 # The six lines below are to save the single distribution region
                 # Becasue there have no noise region in this region_set
@@ -179,19 +217,16 @@ class Region_Cluster():
 
     def clustered_batch(self, classifications, samples, metric):
         """Create a set which in the same clusters
-
         Parameters
         ----------
         classifications : array_like
             The clustered number set after executed dbscan.py
         samples : array_like
             The original samples waiting the clustering.
-
         Return
         ------
         cb : list
             The clustered samples' batchs.
-
         Example
         -------
         >>> from dbscan_bhatt import DBSCAN
@@ -234,22 +269,16 @@ class Region_Cluster():
         ----------
         batch : array_like
             The clustered samples' batchs.
-
         Return
         ------
         cb : array_like
             Having mean and covariance matrix
-
         """
         cb_b = []
         for i in range(len(batch)):
-            samples = batch[i]
-            concatenate = []
-            for sample in samples:
-                concatenate.append(np.append(sample[0],sample[1]))
-            concatenate = np.array(concatenate)
-            me = np.mean(concatenate, axis=0) # the mean of every dimension
-            co = np.cov(concatenate.T) # the covariance matrix of samples
+            samples = np.reshape(batch[i], (len(batch[i]), self.dim* 3))
+            me = np.mean(samples, axis=0) # the mean of every dimension
+            co = np.cov(samples.T) # covariance matrix
             # the distribution of point s in cluster
             if np.linalg.det(co) != 0:
                 cb_b.append([me, co])
@@ -261,7 +290,7 @@ class Region_Cluster():
         train_set = []
         for e in input_set:
             if component == 'current':
-                train_set.append([e.state, e.contact])
+                train_set.append([e.state])
             else:
-                train_set.append([e.next_state, e.next_contact])
+                train_set.append([e.next_state])
         return train_set

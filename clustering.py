@@ -27,7 +27,6 @@ class DBSCAN():
 
     def dbscan(self,):
         """Density-Based Spatial Clustering of Applications with Noise algo
-
         Parameters
         ----------
         samples : list
@@ -44,12 +43,10 @@ class DBSCAN():
             Use "Euclidean Distance" or "Bhattacharyya Distance".
         cluster_id : int
             The first cluster's number, for example No.1 cluster
-
         Return
         ------
         clusters : array_like
             The clustered group of each data.
-
         """
         cluster_id = 1
         n_points = len(self.samples)
@@ -97,8 +94,7 @@ class DBSCAN():
             # Caculate the Euclidean Distance with state and contact mode at \
             #   the same time
             # Like: D_s(s_i; s_j) = ||s_i − s_j||_2 * ||z^m_i − z^m_j||_2
-            return self.eucli_distance(point_a[0], point_b[0]) + \
-            self.eucli_distance(point_a[1], point_b[1])  < self.eps
+            return self.eucli_distance(point_a[0], point_b[0]) < self.eps
         else:
             # Caculate the bhatt distance between two distribution
             return self.bhat_distance(point_a, point_b) < self.eps

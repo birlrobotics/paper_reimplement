@@ -12,7 +12,9 @@ class data():
 
 # 加载数据集
 iris = load_iris()
-kitting = np.load('/home/jim/Recovery_reimplement/sensor_info_no_recovery_skill_pos.npy')
+kitting = np.load('/home/birl-spai-ubuntu14/baxter_ws/src/SPAI/Recovery_reimplement/sensor_info_no_recovery_skill_pos.npy')
+tag = np.load('/home/birl-spai-ubuntu14/baxter_ws/src/SPAI/Recovery_reimplement/tag_info_no_recovery_skill_pos.npy')
+
 
 # # 共有150个例子， 数据的类型是numpy.ndarray
 # print(iris.data.shape)
@@ -27,14 +29,14 @@ tsne = TSNE(n_components=2, learning_rate=100).fit_transform(kitting)
 # pca = PCA().fit_transform(iris.data)
 # pca = PCA().fit_transform(kitting)
 # # 设置画布的大小
-plt.figure(figsize=(12, 6))
-plt.subplot(121)
+# plt.figure(figsize=(12, 6))
+# plt.subplot(121)
 # plt.scatter(tsne[:, 0], tsne[:, 1], c=iris.target)
-plt.scatter(tsne[:, 0], tsne[:, 1])
+plt.scatter(tsne[:, 0], tsne[:, 1], c=tag)
 
-plt.subplot(122)
+# plt.subplot(122)
 # plt.scatter(pca[:, 0], pca[:, 1], c=iris.target)
-plt.scatter(pca[:, 0], pca[:, 1])
+# plt.scatter(pca[:, 0], pca[:, 1])
 
-# plt.colorbar()
+plt.colorbar()
 plt.show()

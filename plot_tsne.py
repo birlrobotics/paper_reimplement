@@ -12,9 +12,11 @@ class data():
 
 # 加载数据集
 iris = load_iris()
-kitting = np.load('/home/birl-spai-ubuntu14/baxter_ws/src/SPAI/Recovery_reimplement/sensor_info_no_recovery_skill_pos.npy')
-tag = np.load('/home/birl-spai-ubuntu14/baxter_ws/src/SPAI/Recovery_reimplement/tag_info_no_recovery_skill_pos.npy')
+kitting = np.load('/home/jim/Recovery_reimplement/sensor_info_no_recovery_skill_pos.npy')
+tag = np.load('/home/jim/Recovery_reimplement/tag_info_no_recovery_skill_pos.npy')
 
+colors = {3:'r',4:'g',5:'b',7:'c',8:'m',9:'y'
+}
 
 # # 共有150个例子， 数据的类型是numpy.ndarray
 # print(iris.data.shape)
@@ -32,8 +34,10 @@ tsne = TSNE(n_components=2, learning_rate=100).fit_transform(kitting)
 # plt.figure(figsize=(12, 6))
 # plt.subplot(121)
 # plt.scatter(tsne[:, 0], tsne[:, 1], c=iris.target)
-plt.scatter(tsne[:, 0], tsne[:, 1], c=tag)
-
+# plt.scatter(tsne[:, 0], tsne[:, 1], c=colors[tag], label='Skill'+str(tag))
+for i in range(len(tsne)):
+    plt.scatter(tsne[:, 0], tsne[:, 1], c=tag)
+    plt.plot(c=tag, label='Skill'+str(tag))
 # plt.subplot(122)
 # plt.scatter(pca[:, 0], pca[:, 1], c=iris.target)
 # plt.scatter(pca[:, 0], pca[:, 1])

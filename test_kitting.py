@@ -20,7 +20,7 @@ demo_act_dict[9]=goal_tuples
 
 
 
-exp_tuple_test = np.load('/home/birl-spai-ubuntu14/Recovery_reimplement/experience_tuple_no_recovery_skill_positions.npy')
+exp_tuple_test = np.load('/home/birl-spai-ubuntu14/baxter_ws/src/SPAI/Recovery_reimplement/experience_tuple_no_recovery_skill_positions.npy')
 experience_tuple = []
 experience = namedtuple("Experience", field_names = ["state", "action", "reward", "next_state", "done"])
     

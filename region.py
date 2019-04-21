@@ -182,7 +182,7 @@ class Region_Cluster():
             if distance_type == 'states_dist':
                 # use DBSCAN with Euclidean Distance to create the states bunch
                 train_set_cs = self.extract_sz(input_set, component)
-                cluster = clustering.DBSCAN(train_set_cs, eps=5, minpts=3, \
+                cluster = clustering.DBSCAN(train_set_cs, eps=0.1, minpts=3, \
                     metric='E')
                 classifications_cs = cluster.dbscan()
                 cb = self.clustered_batch(classifications_cs, train_set_cs, \
@@ -191,7 +191,7 @@ class Region_Cluster():
             else:
                 # use DBSCAN with Bhat Distance to create the distribution bunch
                 d = self.moment(input_set) # return the distribution set
-                cluster = clustering.DBSCAN(d, 0.05, minpts=2, metric='B')
+                cluster = clustering.DBSCAN(d, 0.5, minpts=2, metric='B')
                 classifications_b = cluster.dbscan()
                 # The six lines below are to save the single distribution region
                 # Becasue there have no noise region in this region_set
@@ -207,7 +207,7 @@ class Region_Cluster():
 
         else:
             train_set_ns = self.extract_sz(input_set, component)
-            cluster = clustering.DBSCAN(train_set_ns, eps=5, minpts=3, \
+            cluster = clustering.DBSCAN(train_set_ns, eps=0.1, minpts=3, \
                 # TODO:eps threshold
                 metric='E')# ros use standard unit(kg, metres, radians)
             classifications_ns = cluster.dbscan()

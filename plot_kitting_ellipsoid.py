@@ -66,13 +66,17 @@ for i, r_ss in enumerate(r_s):
     x = np.mat(rx * np.outer(np.cos(u), np.sin(v)))+r_ss[2][i][0][0]
     y = np.mat(ry * np.outer(np.sin(u), np.sin(v)))+r_ss[2][i][0][1]
     z = np.mat(rz * np.outer(np.ones_like(u), np.cos(v)))+r_ss[2][i][0][2]
-
+    N = i
     # Plot the surface
+    # m = [104.48, 111.73,109.93,139.95,95.05,150.49,136.96,157.75, 4, 56, 78, 23]
+    # my_col = cm.jet(np.random.rand(i,i))
     ax.plot_surface(x, y, z, cmap=cm.coolwarm, alpha=0.5)
-
-    cset = ax.contourf(x, y, z, zdir='x', offset=-2*rx, cmap=cm.coolwarm)
-    cset = ax.contourf(x, y, z, zdir='y', offset=1.8*ry, cmap=cm.coolwarm)
-    cset = ax.contourf(x, y, z, zdir='z', offset=-2*rz, cmap=cm.coolwarm)
+    ax.set_facecolor('#eafff5')
+    # ax.set_facecolor(np.random.rand(3))
+    
+    cset = ax.contourf(x, y, z, zdir='x', offset=-2*rx, cmap=cm.coolwarm, alpha=0.5)
+    cset = ax.contourf(x, y, z, zdir='y', offset=1.8*ry, cmap=cm.coolwarm, alpha=0.5)
+    cset = ax.contourf(x, y, z, zdir='z', offset=-2*rz, cmap=cm.coolwarm, alpha=0.5)
     max_radius = max(rx, ry, rz)
 
 # ax.set_xlabel('X')

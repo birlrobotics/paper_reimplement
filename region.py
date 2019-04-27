@@ -46,7 +46,7 @@ class Region_Cluster():
     """
 
 
-    def __init__(self, dim =2 ):
+    def __init__(self, dim = 2):
         self.e_list = []
         self.a_dict = []
         self.dim = dim

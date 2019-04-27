@@ -16,31 +16,37 @@ import clustering
 
 class Region_Cluster():
     """Learning stribution State Distribution Components.
+
     Parameters
     ----------
     experience_list : list
         a list of experience namedtuples: [(s,z,a,r,s',z'),(s,z,a,r,s',z'),...].
     action_dict : list
         a dict of demonstration actions.
+
     Return
     ------
     return_set : list
 	    A set of each region which having mean and covariance matrix correspond.
+
     Examples
     --------
     >>>
+
     Notes
     -----
     phi_set is the lower case phi, region_phi_set is the capital case phi\
         (which always has the prefix region_).
     psi_set is the lower case psi, region_psi_set is the capital case psi\
         (which always has the prefix region_).
+
     References
     ----------
+
     """
 
 
-    def __init__(self, dim =1 ):
+    def __init__(self, dim =2 ):
         self.e_list = []
         self.a_dict = []
         self.dim = dim
@@ -170,6 +176,7 @@ class Region_Cluster():
             And each region is a set of bunch of experience tuples.
         component : str
             Cluster on which component, 'states' or 'next_states'.
+
         Return
         ------
         cb : list
@@ -217,16 +224,19 @@ class Region_Cluster():
 
     def clustered_batch(self, classifications, samples, metric):
         """Create a set which in the same clusters
+
         Parameters
         ----------
         classifications : array_like
             The clustered number set after executed dbscan.py
         samples : array_like
             The original samples waiting the clustering.
+
         Return
         ------
         cb : list
             The clustered samples' batchs.
+
         Example
         -------
         >>> from dbscan_bhatt import DBSCAN
@@ -269,10 +279,12 @@ class Region_Cluster():
         ----------
         batch : array_like
             The clustered samples' batchs.
+
         Return
         ------
         cb : array_like
             Having mean and covariance matrix
+
         """
         cb_b = []
         for i in range(len(batch)):

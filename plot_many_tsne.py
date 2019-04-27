@@ -8,8 +8,8 @@ class data():
         self.data = data
         self.target = target
 
-kitting = np.load('/home/jim/Recovery_reimplement/sensor_info_no_recovery_skill_pos.npy')
-tag = np.load('/home/jim/Recovery_reimplement/tag_info_no_recovery_skill_pos.npy')
+kitting = np.load('sensor_info_no_recovery_skill_pos.npy')
+tag = np.load('tag_info_no_recovery_skill_pos.npy')
 
 
 print(kitting.shape)

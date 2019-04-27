@@ -53,7 +53,7 @@ start = time.clock()
 #     plt.savefig('tsne'+str(i), format="png", dpi=300)
 
 
-tsne = np.load('/home/jim/Recovery_reimplement/tsne0.npy')
+tsne = np.load('tsne0.npy')
 # tsne = np.load('/home/jim/Recovery_reimplement/tsne_499.npy')
 
 # # plt.scatter(tsne[:, 0], tsne[:, 1], c=colors[t], label ='Skill ' + str(1), alpha=0.5)

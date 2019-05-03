@@ -20,7 +20,9 @@ demo_act_dict[9]=goal_tuples
 
 
 
-exp_tuple_test = np.load('experience_tuple_no_recovery_skill_positions.npy')
+exp_tuple_test = np.load('experience_tuple_no_recovery_skill_positions.npy', encoding="latin1")
+
+
 experience_tuple = []
 experience = namedtuple("Experience", field_names = ["state", "action", "reward", "next_state", "done"])
     
@@ -45,5 +47,13 @@ action_dict = demo_act_dict
 # print(experience_list)
 
 obj = region.Region_Cluster()
-r_s = obj.learn_funnels(experience_list, action_dict)
-print(r_s)
+# r_s = obj.learn_funnels(experience_list, action_dict, 0.1, 3)
+
+# print(r_s)
+
+clustered_regions = obj.cluster_for_visualize(experience_list, action_dict, 0.5, 3)
+
+
+
+print(clustered_regions)
+

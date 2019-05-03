@@ -44,7 +44,9 @@ class Region_Cluster():
         self.e_list = []
         self.a_dict = []
         self.dim = dim
-    def learn_funnels(self,experience_list, action_dict):
+        self.eps = None
+        self.minpts = None
+    def learn_funnels(self,experience_list, action_dict, eps, minpts):
         """
         Algo 1 in the recovery paper and add total DBSCAN with bhatt distance \
          in the end
@@ -52,6 +54,9 @@ class Region_Cluster():
         # line 2
         self.e_list = experience_list
         self.a_dict = action_dict
+        self.eps = eps
+        self.minpts = minpts
+
         return_set = []
         funnel_index = 0
         region_index = 0
@@ -134,6 +139,38 @@ class Region_Cluster():
         # print("funnels_inf_list",return_set)
         return return_set
 
+    def cluster_for_visualize(self,experience_list, action_dict, eps, minpts):
+        self.e_list = experience_list
+        self.a_dict = action_dict
+        self.eps = eps
+        self.minpts = minpts
+        return_set = []
+        funnel_index = 0
+        region_index = 0
+        clustered_regions = []
+
+        for (act_index, act_value) in self.a_dict.items():
+            region_phi_hat_set = []
+            same_act_exp_set = self.extract_exp_with_same_action(act_index)
+            region_psi_set = self.cluster(same_act_exp_set, component='next', \
+                distance_type = 'states_dist')
+            list_region_psi_set = list(region_psi_set)
+            for psi_set in list_region_psi_set:
+                region_phi_hat_hat_set = self.cluster(psi_set, \
+                    component='current', distance_type = 'states_dist')
+                region_phi_hat_set.extend(region_phi_hat_hat_set)
+
+            P = self.cluster(region_phi_hat_set, component= 'current', \
+                distance_type = 'region_dist')
+            if len(P) == len(region_phi_hat_set):
+                region = region_phi_hat_set
+            else:
+                region = self.clustered_batch(classifications_b, region_phi_hat_set, \
+                metric='append')
+            
+            clustered_regions.append(region)
+        return clustered_regions
+
     def extract_exp_with_same_action(self, act_index):
         """Get a set of experience namedtuple with same action:\
          [(s,z,a,r,s',z'),...]
@@ -182,7 +219,7 @@ class Region_Cluster():
             if distance_type == 'states_dist':
                 # use DBSCAN with Euclidean Distance to create the states bunch
                 train_set_cs = self.extract_sz(input_set, component)
-                cluster = clustering.DBSCAN(train_set_cs, eps=0.1, minpts=3, \
+                cluster = clustering.DBSCAN(train_set_cs, eps=self.eps, minpts=self.minpts, \
                     metric='E')
                 classifications_cs = cluster.dbscan()
                 cb = self.clustered_batch(classifications_cs, train_set_cs, \
@@ -190,9 +227,12 @@ class Region_Cluster():
                 return cb
             else:
                 # use DBSCAN with Bhat Distance to create the distribution bunch
+                # classifications_b=[]
                 d = self.moment(input_set) # return the distribution set
-                cluster = clustering.DBSCAN(d, 0.5, minpts=2, metric='B')
+                # global classifications_b
+                cluster = clustering.DBSCAN(d, 0.25, minpts=5, metric='B')
                 classifications_b = cluster.dbscan()
+                global classifications_b
                 # The six lines below are to save the single distribution region
                 # Becasue there have no noise region in this region_set
                 if classifications_b != []:
@@ -207,8 +247,7 @@ class Region_Cluster():
 
         else:
             train_set_ns = self.extract_sz(input_set, component)
-            cluster = clustering.DBSCAN(train_set_ns, eps=0.1, minpts=3, \
-                # TODO:eps threshold
+            cluster = clustering.DBSCAN(train_set_ns, eps=self.eps, minpts=self.minpts, \
                 metric='E')# ros use standard unit(kg, metres, radians)
             classifications_ns = cluster.dbscan()
             cb = self.clustered_batch(classifications_ns, input_set, \

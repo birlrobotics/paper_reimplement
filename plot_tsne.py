@@ -8,11 +8,11 @@ from collections import OrderedDict
 from mpl_toolkits.mplot3d import Axes3D
 import time
 
-kitting = np.load('/home/jim/Recovery_reimplement/sensor_info_no_recovery_skill_pos.npy')
-tag = np.load('/home/jim/Recovery_reimplement/tag_info_no_recovery_skill_pos.npy')
+# kitting = np.load('/home/jim/Recovery_reimplement/sensor_info_no_recovery_skill_7dim.npy')
+# tag = np.load('/home/jim/Recovery_reimplement/tag_info_no_recovery_skill_7dim.npy')
 
-# kitting = np.load('/home/jim/Recovery_reimplement/sensor_info_no_recovery_skill_pos_et.npy')
-# tag = np.load('/home/jim/Recovery_reimplement/tag_info_no_recovery_skill_pos_et.npy')
+kitting = np.load('sensor_info_no_recovery_skill_7dim_et.npy')
+tag = np.load('tag_info_no_recovery_skill_7din_et.npy')
 
 
 colors = {3:'black',
@@ -78,4 +78,4 @@ plt.show()
 
 
 end = time.clock()
-print end-start 
+# print end-start 
